@@ -1,16 +1,44 @@
 # AIGD — AI-assisted game design methodology (portable skill package)
 
+*Brainstorm a game's design with one AI; hand the result to another AI to build it — backed by deterministic checkers that won't let a broken handoff through.*
+
 > 🌐 中文版 / Chinese version: **[ProdaZhang/aigd-zh](https://github.com/ProdaZhang/aigd-zh)**
 
-Turns **game system design** into a **platform-agnostic handoff package** that another AI (or person) can develop directly from; and ships **deterministic checkers** that gate the handoff package to "consumable" before letting it through. Discussion-driven, doesn't decide your numbers for you, doesn't bind to an engine.
+![AIGD: brainstorm a design with an AI, produce the handoff package, then gate it with deterministic checks](docs/session.gif)
 
-> This is the repo landing page. **Full docs** → [`aigd/README.md`](aigd/README.md); **get a feel by running it first** → [`aigd/examples/potion-crafting/`](aigd/examples/potion-crafting/).
+**The problem it solves:** game-design handoff breaks when **docs and config quietly drift out of sync** — downstream each reads its own version, implementations fork. AIGD structures the design so drift can't hide (rules carry IDs, numbers live in config, prose only references `table[key].field`) and ships **deterministic checkers** that gate the handoff package to *0 major issues* before it's handed off.
+
+Discussion-driven · doesn't decide your numbers for you · doesn't bind to an engine.
+
+> **This is the repo landing page.** Get a feel by running it first → [`aigd/examples/potion-crafting/`](aigd/examples/potion-crafting/) · full methodology → [`aigd/README.md`](aigd/README.md).
 
 ---
 
 ## What it solves
 
 The most common way game-design handoff goes wrong isn't too little documentation, it's **docs and config quietly drifting out of sync** ("doc fixed first, table changed later without writing it back"), with downstream each reading its own → forked implementations. AIGD blocks this three ways: structured output (rules tagged with numbers / numbers living in config / prose only referencing `table[primary key].field`), explicit ledgering of the undecided (`[to confirm]` handed to a person to decide), deterministic machine checks (`config_check`/`value_check`/`manifest_check`, 0 major counts as handoffable).
+
+## Another AI builds it — and the acceptance tests pass
+
+![A downstream AI implements the example from the handoff package; all 5 acceptance scenarios pass](docs/handoff.gif)
+
+<sub>↑ a **real run** — a from-scratch implementation built only from the example's handoff package passes all 5 acceptance scenarios (`5 passed, 0 failed`).</sub>
+
+## What you produce — the handoff package
+
+![The six-piece set: rules, config, prototype, contract, acceptance, spine](docs/deliverables.gif)
+
+## UI: a DSL renders to a clickable prototype
+
+![A UI-DSL rendered by ui_render into an HTML/SVG wireframe](docs/dsl-render.gif)
+
+## The deterministic checkers that gate it
+
+![The checkers: config_check / value_check / manifest_check / ref_graph + ui_render](docs/tools.gif)
+
+![Real run: the checker catches a config↔doc drift, refuses the handoff, then passes once fixed](docs/demo.gif)
+
+<sub>↑ a **real run** of `config_check` — it catches a config↔doc drift (`UNDOC_COL`), then passes once it's fixed.</sub>
 
 ## Install (7 folders, no more no less)
 

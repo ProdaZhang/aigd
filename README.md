@@ -6,7 +6,7 @@
 
 ![AIGD: brainstorm a design with an AI, produce the handoff package, then gate it with deterministic checks](docs/session.gif)
 
-**The problem it solves:** game-design handoff breaks when **docs and config quietly drift out of sync** — downstream each reads its own version, implementations fork. AIGD structures the design so drift can't hide (rules carry IDs, numbers live in config, prose only references `table[key].field`) and ships **deterministic checkers** that gate the handoff package to *0 major issues* before it's handed off.
+**You only do two things: brainstorm the design with an AI, and set the numbers.** The flow handles the rest — it turns the discussion into structured output (rules carry IDs · numbers live in config · UI-DSL · interface contract · acceptance cases), gates consistency with **deterministic checkers**, and packages a **platform-agnostic handoff** that **another AI can implement directly** — verified by a real run in this repo (below).
 
 Discussion-driven · doesn't decide your numbers for you · doesn't bind to an engine.
 

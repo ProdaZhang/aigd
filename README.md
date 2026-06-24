@@ -1,5 +1,7 @@
 # AIGD — AI-assisted game design methodology (portable skill package)
 
+> 🌐 中文版 / Chinese version: **[ProdaZhang/aigd-zh](https://github.com/ProdaZhang/aigd-zh)**
+
 Turns **game system design** into a **platform-agnostic handoff package** that another AI (or person) can develop directly from; and ships **deterministic checkers** that gate the handoff package to "consumable" before letting it through. Discussion-driven, doesn't decide your numbers for you, doesn't bind to an engine.
 
 > This is the repo landing page. **Full docs** → [`aigd/README.md`](aigd/README.md); **get a feel by running it first** → [`aigd/examples/potion-crafting/`](aigd/examples/potion-crafting/).

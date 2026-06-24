@@ -18,7 +18,7 @@ AIGD 方法论自带的**确定性脚本**。两条主线:
 
 | 依赖 | 谁用 | 装法 |
 |------|------|------|
-| 纯标准库 | `ui_render` `xlsx_dump` `resolve_loc` `config_index` `config_check` `value_check` `manifest_check` | 无需安装 |
+| 纯标准库 | `ui_render` `xlsx_dump` `resolve_loc` `config_index` `config_check` `value_check` `manifest_check` `ref_lib` `ref_graph` | 无需安装 |
 | Pillow≥9 | `ui_palette` `ui_slice`（图像采色/切片） | `pip install Pillow` |
 | openpyxl≥3 | `gherkin_to_checklist`（**写** xlsx） | `pip install openpyxl` |
 
@@ -116,6 +116,26 @@ python manifest_check.py <manifest.md>
 
 > 真 manifest 的「依赖(上游)」列是**散文 + 按名引用**（`物品[广播](分解道具)`），不是干净 ID 列。故 `DANGLING_DEP` 只对**显式 `S\d+`** 报 major（零误报），环检测则按**系统名子串**连边并排除自环。**不抓**：D 表待重验触发 ↔ F 表对账（触发项混点对点口径，机检会大量误报，留人工）。
 
+### `ref_graph.py` — 工具7 · 设计文件**双向引用图** + 悬空引用门禁（纯 stdlib）
+```
+python ref_graph.py <项目根> [--out refs.md] [--who-refs <符号>] [--check] [--json]
+```
+扫全部设计文件（`.md`/`.proto`/`.xlsx`），抽**结构化**引用（`R-编号` / `表[主键]` / proto `import`），给"每文件→引用了谁 / ←被谁引用（=**改它的影响集**）"。纪律:**正向引用是真源,反向索引实时算、绝不落盘**——所以不会像手写"被引用"那样漂移。退出码非 0（`--check` 下）= 有 major。
+
+| 类别 | 抓什么 | 严重度 |
+|------|--------|--------|
+| `DANGLING_RULE` | `R-编号` 被引用但无任何文件定义（标题命名子系统 `## … R-X` / 行首叶子规则 `- **R-X-01**` 都算定义） | major |
+| `DANGLING_PROTO` | `import "x.proto"` 找不到对应 `.proto` 文件 | major |
+| `DANGLING_TABLE` | `表[主键]` 无对应 xlsx 表（也可能 array 记法误命中，`[推断]` 需人核） | advisory |
+| `DUP_DEF` | 同一 `R-编号` 在多处呈定义点（应唯一定义） | advisory |
+
+- `--who-refs R-X`：查某符号（R 编号/表名/`x.proto`）"定义在哪 + 被谁引用"的影响集。
+- `--out refs.md`：生成双向图（**纯产物，顶部标 `DO NOT EDIT`，绝不手写进规则/配置说明/manifest 等真源文档**；改文档重跑覆盖）。
+- 只认结构化令牌、**不做散文模糊匹配**（故结构引用精度高）；R 编号"定义点 vs 引用点"用标题/行首启发式，通配 `R-X-*` 与粗体 `**R-X**` 已区分。
+
+### `ref_lib.py` — 共享层（库，非 CLI）
+`ref_graph` 的**引用语法真源**:`RULE_RE`(R 编号)、`TABLEREF_RE`(`表[主键]`,表+主键部分与 `config_index.REF_RE` 一致、字段在此可选)、proto `import`,以及"定义点 vs 引用点"判定、通配/数组记法过滤、文件发现。复用 `xlsx_dump` 取 xlsx 表名。**引用语法集中一处,避免多工具各写一套而互相漂移。**
+
 ### `config_index.py` — 共享层（库，非 CLI）
 `value_check` 与 `gherkin_to_checklist` 共用。提供：`build_index`（扫配置目录所有 xlsx → 表索引，含数组列 `arraycols`）、`lookup`（`表[主键].字段`→真值/`MULTI`/`None`，复合键经 keymap 分量匹配、枚举名经 enums 解）、`row_exists`（区分"行缺"与"字段空"）、`column_values` / `array_column_values`（外键取值域）、`load_enums` / `load_keymap`。
 
@@ -158,10 +178,7 @@ python tests/test_value_check.py      # 单个
 
 跑全套：
 ```
-for t in tests/test_ui_render.py tests/test_ui_palette.py tests/test_ui_slice.py \
-         tests/test_config_check.py tests/test_config_index.py tests/test_value_check.py; do
-  python "$t" | tail -1
-done
+for t in tests/test_*.py; do python "$t" | tail -1; done   # 自动含 manifest_check / ref_graph 等
 ```
 
 ## 接进门禁的地方
@@ -169,6 +186,7 @@ done
 - **写脊柱后(各 skill「写回」步)**：跑 `manifest_check`，有 major → 先修脊柱自洽（模块码登记 / 依赖指向 / 状态 / C 分块）再继续。模板自检段见 `templates/manifest.模板.md` 末「自检命令」。
 - **`aigd-handoff` 定稿准入**：定稿前必跑 `config_check` + `value_check`，有 major → 打回。
 - **质量门禁（方法论第 4 步八条）**：「配置每字段有类型/范围/引用」「跨表/跨文件引用无断链」两条挂这俩机检命令——**别只勾框自评**（"文档先定、xlsx 后改不同步"是交接包被下游读出分叉实现的头号根因）。
+- **（可选）引用完整性**：跑 `ref_graph <根> --check`，`R-编号`/proto 悬空 = 失败（补强"引用无断链"那条）；平时用 `ref_graph <根> --who-refs R-X` 查"改这条会牵动哪些文档/验收/proto"。
 
 ## 典型流程
 

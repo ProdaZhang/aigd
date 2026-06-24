@@ -24,7 +24,7 @@ The most common way game-design handoff goes wrong isn't too little documentatio
 
 <sub>↑ a **real run** — a from-scratch implementation built only from the example's handoff package passes all 5 acceptance scenarios (`5 passed, 0 failed`).</sub>
 
-## What you produce — the handoff package
+## What it produces — the handoff package
 
 ![The six-piece set: rules, config, prototype, contract, acceptance, spine](docs/deliverables.gif)
 

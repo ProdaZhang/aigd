@@ -6,11 +6,11 @@
 
 | 文件 | 是什么 |
 |------|--------|
-| [规则.md](规则.md) | 功能规则,每条挂 `R-POT-*`,散文无裸数值(只引 `表[主键].字段`) |
+| [rules.md](rules.md) | 功能规则,每条挂 `R-POT-*`,散文无裸数值(只引 `表[主键].字段`) |
 | [potion.xlsx](potion.xlsx) | 配置表(4 张:`potion`/`potionRarity`/`potionLv`/`recipe`),自描述 4 行表头 |
-| [配置说明.md](配置说明.md) | potion.xlsx 的字段 schema + 外键声明 |
+| [config-spec.md](config-spec.md) | potion.xlsx 的字段 schema + 外键声明 |
 | [potion.proto](potion.proto) | 接口契约(客户端=服务端同一份) |
-| [验收用例.md](验收用例.md) | Gherkin,断言引配置真值 |
+| [acceptance.md](acceptance.md) | Gherkin,断言引配置真值 |
 | [potion.checks.json](potion.checks.json) | 领域规则(等级表 coverage + monotonic) |
 | [manifest.md](manifest.md) | 脊柱(2 系统:药水 + 商店 stub) |
 
@@ -20,10 +20,10 @@
 S=../../references/scripts
 
 # 1) schema 漂移:配置说明 ↔ xlsx 列/类型/表名是否一致
-python $S/config_check.py 配置说明.md potion.xlsx
+python $S/config_check.py config-spec.md potion.xlsx
 
 # 2) 数据完整性:外键断链 / 验收悬空 / 覆盖·单调规则
-python $S/value_check.py 配置说明.md . --acc 验收用例.md --rules potion.checks.json
+python $S/value_check.py config-spec.md . --acc acceptance.md --rules potion.checks.json
 
 # 3) 脊柱自洽:模块码登记 / 依赖指向 / 状态 / C 分块 / 依赖环
 python $S/manifest_check.py manifest.md

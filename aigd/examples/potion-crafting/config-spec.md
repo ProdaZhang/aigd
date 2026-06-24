@@ -53,7 +53,7 @@
 
 ## 校验清单（机检,见样例 README）
 
-- [ ] schema 对齐:`config_check.py 配置说明.md potion.xlsx` → 0 major。
+- [ ] schema 对齐:`config_check.py config-spec.md potion.xlsx` → 0 major。
 - [ ] 外键:`potion.rarity→potionRarity.id`、`recipe.output→potion.id`、`recipe.material[]→potion.id` 无断链。
 - [ ] 等级:`potionLv.id` 连续覆盖 1~5;`potionLv.heal` 随等级单调不减(见 `potion.checks.json`)。
 - [ ] `craftCost`/`name` 引外部表 → 机检跳过(info),投放时由道具/文本系统保证。

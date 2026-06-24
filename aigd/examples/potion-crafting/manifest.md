@@ -22,10 +22,10 @@
 ## C. 跨层索引（每系统一块）
 
 ### S01 药水
-- **规则(-01)**:`规则.md`(R-POT-CRAFT/USE/STACK)
-- **配置表**:`potion.xlsx`(4 表)+ `配置说明.md`
+- **规则(-01)**:`rules.md`(R-POT-CRAFT/USE/STACK)
+- **配置表**:`potion.xlsx`(4 表)+ `config-spec.md`
 - **契约(proto)**:`potion.proto`
-- **验收**:`验收用例.md`
+- **验收**:`acceptance.md`
 - **领域规则**:`potion.checks.json`(coverage/monotonic)
 - **反向提供**:无独有共享真源
 

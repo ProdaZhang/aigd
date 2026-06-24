@@ -1,7 +1,7 @@
 # AIGD 常见错误速查(真踩过的坑)
 
 > **用途**:`aigd-system`/`aigd-handoff` 干活前过一眼。这里的坑**全是用 AIGD 实际开发/校验中暴露过的**(项目细节已中性化),不是教科书举例——每条给 症状 / 根因 / 正确做法。
-> 数值/经济类设计陷阱另见 [`patterns/数值坑集/常见数值陷阱.md`](patterns/数值坑集/常见数值陷阱.md);本页是**执行 + 交接 + 校验**类。
+> 数值/经济类设计陷阱另见 [`patterns/numeric-traps/numeric-traps.md`](patterns/numeric-traps/numeric-traps.md);本页是**执行 + 交接 + 校验**类。
 
 ---
 
@@ -9,8 +9,8 @@
 
 | 错误 | 症状 | 根因 | 正确做法 |
 |------|------|------|---------|
-| **工具调用 malformed 静默不执行** | "又炸了 / 写完了吗";文件没写、命令没跑,却以为已完成 | function-call 块格式不合 harness 要求(如 Claude Code 缺 `antml:` 前缀)→ 被静默丢弃 | **发前核一遍格式 + 发后复核产物**(读文件/`ls` 确认真落盘);用户说"炸了"→先承认未执行、核查实际状态、原样重发。各 harness 格式见 `harness适配.md` |
-| **中文文件被加 BOM / 变 UTF-16** | 下游读出乱码或解析失败 | 用了会加 BOM 的写法(如 PowerShell 裸 `Out-File`/`Set-Content`) | 落盘前确认 UTF-8 无 BOM(Claude Code 的 Write 默认无 BOM;PowerShell 用 `UTF8Encoding $false`),见 `harness适配.md` |
+| **工具调用 malformed 静默不执行** | "又炸了 / 写完了吗";文件没写、命令没跑,却以为已完成 | function-call 块格式不合 harness 要求(如 Claude Code 缺 `antml:` 前缀)→ 被静默丢弃 | **发前核一遍格式 + 发后复核产物**(读文件/`ls` 确认真落盘);用户说"炸了"→先承认未执行、核查实际状态、原样重发。各 harness 格式见 `harness-adapt.md` |
+| **中文文件被加 BOM / 变 UTF-16** | 下游读出乱码或解析失败 | 用了会加 BOM 的写法(如 PowerShell 裸 `Out-File`/`Set-Content`) | 落盘前确认 UTF-8 无 BOM(Claude Code 的 Write 默认无 BOM;PowerShell 用 `UTF8Encoding $false`),见 `harness-adapt.md` |
 | **删/改不可逆** | 误删用户源文件、覆盖已填配置 | 仓库**非 git**,删除/重命名无回退 | 动已有文件**前先 Read 看内容**;**绝不动/不覆盖**用户的源 xlsx 与已填配置;删产物前确认是产物非真源 |
 | **表格内裸 `|` 撑乱列** | markdown 表格列数错位(MD056) | 内容里写了字面 `|`(如位编码公式 `(X+1)<<16)|(Y+1)`) | 内容列用 `/` 或转义 `\|` |
 
@@ -30,7 +30,7 @@
 | **config↔doc 失同步** ⚠️ | 文档层全过,下游仍实现分叉 | **先定文档、后改 xlsx 没回写**(交接包被下游读出分叉的头号根因) | 定稿前**必跑** `config_check`(schema)+`value_check`(数据完整性),0 major 才算过;别只勾"校验清单"框自评 |
 | **校验器误报(空哨兵/空格)** | 假 `FK_BREAK`/假 `ACC_DANGLING`,可信度崩 | `0`=无引用被当 id 查外键(某"下一形态 id"字段=0);空 optional 格被当行缺(某可选字段留空) | 外键跳过空哨兵 `{0,0.0}`(前提 id 恒正);用 `row_exists` 区分**行缺 vs 字段空**;**宁可漏报不误报**,解不出就标记不臆造 |
 | **对象数组表头漏解析** | 配置列被吞、报一堆假 major | 数组闭合只认 `]`,漏了对象数组 `max}]` | 闭合判定用 `"]" in nm`;数组列**不比标量类型**(混合子类型无单一类型) |
-| **脊柱跨表不自洽** | 模块码没登记、依赖指向不存在系统、定稿缺 proto | manifest 6 表手写、没机检 | 写脊柱后跑 `manifest_check`,major 先修再继续(见 `templates/manifest.模板.md` 自检段) |
+| **脊柱跨表不自洽** | 模块码没登记、依赖指向不存在系统、定稿缺 proto | manifest 6 表手写、没机检 | 写脊柱后跑 `manifest_check`,major 先修再继续(见 `templates/manifest.tpl.md` 自检段) |
 
 ## D. 委托子 agent(消费端验证 / 并行产出时)
 

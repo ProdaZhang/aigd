@@ -26,7 +26,7 @@ aigd/  aigd-concept/  aigd-system/  aigd-iterate/  aigd-handoff/  aigd-sync/  ai
 | Codex | `~/.codex/skills/<名>`(或自带 skill-installer 从仓库装;装完重启) |
 | Copilot CLI 1.0.63 | ❌ 无 skills 机制,走 `AGENTS.md`/MCP/plugin,需适配 |
 
-包结构(`SKILL.md` + `name`/`description` frontmatter)在 **Claude Code / ZCode / Gemini / Codex** 通用(均已实测);**Copilot 1.0.63 不支持**。装哪/怎么唤起/工具名对应见 [`aigd/references/harness适配.md`](aigd/references/harness适配.md)。跑校验器要 Python(多数纯标准库;部分要 `openpyxl`/`Pillow`,见 `aigd/references/scripts/requirements.txt`)。
+包结构(`SKILL.md` + `name`/`description` frontmatter)在 **Claude Code / ZCode / Gemini / Codex** 通用(均已实测);**Copilot 1.0.63 不支持**。装哪/怎么唤起/工具名对应见 [`aigd/references/harness-adapt.md`](aigd/references/harness-adapt.md)。跑校验器要 Python(多数纯标准库;部分要 `openpyxl`/`Pillow`,见 `aigd/references/scripts/requirements.txt`)。
 
 ## 上手
 
@@ -56,7 +56,7 @@ aigd/  aigd-concept/  aigd-system/  aigd-iterate/  aigd-handoff/  aigd-sync/  ai
 | Codex 0.140（OpenAI·跨厂） | ✅ | ✅ | ✅ | ✅ |
 | Copilot CLI 1.0.63（GitHub） | ❌ 无 skills 机制 | — | — | — |
 
-四个 harness 实测跑通(发现 + 路由 + 执行),**含 Gemini、Codex 两个跨厂**;Gemini 用 `gemini skills install <repo>`、Codex 用自带 skill-installer 都能从本仓库一键装。**Copilot CLI 1.0.63 经实测不支持 SKILL.md skills 机制**(走 AGENTS.md/MCP/plugin),aigd 需适配才能用。装哪/怎么唤起见 [`aigd/references/harness适配.md`](aigd/references/harness适配.md)。
+四个 harness 实测跑通(发现 + 路由 + 执行),**含 Gemini、Codex 两个跨厂**;Gemini 用 `gemini skills install <repo>`、Codex 用自带 skill-installer 都能从本仓库一键装。**Copilot CLI 1.0.63 经实测不支持 SKILL.md skills 机制**(走 AGENTS.md/MCP/plugin),aigd 需适配才能用。装哪/怎么唤起见 [`aigd/references/harness-adapt.md`](aigd/references/harness-adapt.md)。
 
 ## 许可
 

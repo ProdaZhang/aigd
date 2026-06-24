@@ -12,10 +12,10 @@
 
 ## 各系统在哪（指向 manifest 跨层索引）
 - 系统清单 + 状态 + 跨层索引:**`manifest.md`**(先读它)
-- 规则(行为,挂 R-编号):`docs/系统/<…>/规则.md`
+- 规则(行为,挂 R-编号):`docs/系统/<…>/rules.md`
 - 契约:`proto/`(common + 各系统;统一号段)
 - 配置:`config/source/`(表 + 配置说明;含 LocalizationText)
-- 验收(完成定义):`<…>-05验收用例.md`(Gherkin)+ 策划版清单
+- 验收(完成定义):`<…>-05acceptance.md`(Gherkin)+ 策划版清单
 
 ## 怎么算"实现对了"
 - 以**验收用例**为完成定义(断言用 proto 字段 + `表[主键].字段`)。

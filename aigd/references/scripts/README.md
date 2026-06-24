@@ -28,7 +28,7 @@ AIGD 方法论自带的**确定性脚本**。两条主线:
 
 ## A. 界面知识库工具链
 
-> 工具1 = **`aigd-ui-capture` skill**（不是脚本）：把截图读成一份界面 DSL（`.md`）。文法契约见 `../界面DSL规范.md`。以下脚本消费这份 DSL。
+> 工具1 = **`aigd-ui-capture` skill**（不是脚本）：把截图读成一份界面 DSL（`.md`）。文法契约见 `../ui-dsl-spec.md`。以下脚本消费这份 DSL。
 
 ### `ui_render.py` — 工具2 · DSL → html/svg（纯 stdlib，确定性）
 ```
@@ -57,7 +57,7 @@ python ui_slice.py <DSL.md> <原图> [outdir] [--only 背景槽,立绘槽,图标
 
 ### `config_check.py` — 工具4 · 配置说明 ↔ xlsx **schema 漂移**（纯 stdlib）
 ```
-python config_check.py <配置说明.md> <表.xlsx>
+python config_check.py <config-spec.md> <表.xlsx>
 ```
 管"**结构**对不对"：列/类型/表名/声明域。退出码非 0 = 有 major。
 
@@ -72,8 +72,8 @@ python config_check.py <配置说明.md> <表.xlsx>
 
 ### `value_check.py` — 工具5 · 配置**数据完整性**（纯 stdlib）
 ```
-python value_check.py <配置说明.md> <配置目录> \
-  [--acc <验收用例.md>] [--rules <系统.checks.json>] \
+python value_check.py <config-spec.md> <配置目录> \
+  [--acc <acceptance.md>] [--rules <系统.checks.json>] \
   [--enums <枚举字典.md>] [--keymap <复合键映射.json>] [--refmap <引用表映射.json>]
 ```
 管"**数据本身/数据之间**对不对"。`复合键映射.json` 与 `引用表映射.json` 在配置目录时**自动加载**（无需显式传）。退出码非 0 = 有 major。
@@ -141,7 +141,7 @@ python ref_graph.py <项目根> [--out refs.md] [--who-refs <符号>] [--check] 
 
 ### `gherkin_to_checklist.py` — 验收用例 → 策划版清单 xlsx（openpyxl 写）
 ```
-python gherkin_to_checklist.py <验收用例.md> [out.xlsx] \
+python gherkin_to_checklist.py <acceptance.md> [out.xlsx] \
   [--config <配置目录>] [--enums <枚举字典.md>] [--keymap <复合键映射.json>] [--loc <LocalizationText.xlsx>]
 ```
 把 Gherkin 验收用例翻成策划/QA 逐条勾的清单（说明页 + 测试清单页 + 进度统计）。`--config` 时把断言里的 `表[主键].字段` **代入配置真值**（反向校验配置↔规则一致性）；护栏：多键/查不到标 `[需手填]`/`[查不到]`，**绝不臆造**。
@@ -183,7 +183,7 @@ for t in tests/test_*.py; do python "$t" | tail -1; done   # 自动含 manifest_
 
 ## 接进门禁的地方
 
-- **写脊柱后(各 skill「写回」步)**：跑 `manifest_check`，有 major → 先修脊柱自洽（模块码登记 / 依赖指向 / 状态 / C 分块）再继续。模板自检段见 `templates/manifest.模板.md` 末「自检命令」。
+- **写脊柱后(各 skill「写回」步)**：跑 `manifest_check`，有 major → 先修脊柱自洽（模块码登记 / 依赖指向 / 状态 / C 分块）再继续。模板自检段见 `templates/manifest.tpl.md` 末「自检命令」。
 - **`aigd-handoff` 定稿准入**：定稿前必跑 `config_check` + `value_check`，有 major → 打回。
 - **质量门禁（方法论第 4 步八条）**：「配置每字段有类型/范围/引用」「跨表/跨文件引用无断链」两条挂这俩机检命令——**别只勾框自评**（"文档先定、xlsx 后改不同步"是交接包被下游读出分叉实现的头号根因）。
 - **（可选）引用完整性**：跑 `ref_graph <根> --check`，`R-编号`/proto 悬空 = 失败（补强"引用无断链"那条）；平时用 `ref_graph <根> --who-refs R-X` 查"改这条会牵动哪些文档/验收/proto"。

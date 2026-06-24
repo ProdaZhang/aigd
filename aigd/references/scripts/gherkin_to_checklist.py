@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""验收用例.md(工程版 Gherkin) → 策划版验收清单 xlsx，可选真值代入。
+"""acceptance.md(工程版 Gherkin) → 策划版验收清单 xlsx，可选真值代入。
 
-把 `-05验收用例.md`(场景挂 R-编号、假设/当/那么 句式)自动翻成策划/QA
+把 `-05acceptance.md`(场景挂 R-编号、假设/当/那么 句式)自动翻成策划/QA
 "拿着游戏逐条勾"的清单:说明页 + 测试清单页(下拉 通过/不通过/待测、
 冻结表头、筛选、进度统计公式)。**从 Gherkin 自动抽用例,不手列。**
 
@@ -16,7 +16,7 @@
   - --loc 给 LocalizationText 时,NameId/DescId 这类文本字段额外附中文。
 
 用法:
-  python gherkin_to_checklist.py <验收用例.md> [out.xlsx] [--config <配置目录>] [--loc <LocalizationText.xlsx>]
+  python gherkin_to_checklist.py <acceptance.md> [out.xlsx] [--config <配置目录>] [--loc <LocalizationText.xlsx>]
 依赖 openpyxl(写侧);--config 时复用同目录 xlsx_dump.py 解配置表。
 """
 import sys, os, re, datetime, json
@@ -128,13 +128,13 @@ def build(cases, title, out, idx, loc):
     s["A1"].alignment = Alignment(horizontal="center", vertical="center")
     s.row_dimensions[1].height = 30
     today = datetime.date.today().isoformat()
-    note = (f"{today} 由 gherkin_to_checklist.py 从 -05验收用例.md 自动生成,共 {len(cases)} 条"
+    note = (f"{today} 由 gherkin_to_checklist.py 从 -05acceptance.md 自动生成,共 {len(cases)} 条"
             + ("(已代入配置真值,见「来源字段」列;[需手填]/[查不到] 为护栏标记)。" if idx else "(未接配置,断言保留工程字段引用)。"))
     rows = [
         ("", ""),
         ("怎么用", "① 按「前置」把游戏调到指定状态 → ② 照「操作」点 → ③ 拿「预期结果」对实际表现核对,在「测试清单」页的 实测结果/通过 列勾选。"),
         ("真值/来源", "预期里的数字已代入配置真值;「来源字段」列标出处(`表[主键].字段`)。配置改了照来源刷新即可,逻辑不动。也可反向核对:工程/规则读表取的值与此一致否。"),
-        ("关联", "每条挂工程版 R-编号,可回连 -05验收用例.md 与 -01系统规则.md。"),
+        ("关联", "每条挂工程版 R-编号,可回连 -05acceptance.md 与 -01系统rules.md。"),
         ("生成", note),
     ]
     r = 3
@@ -203,7 +203,7 @@ if __name__ == "__main__":
         elif a == "--enums"  and i+1 < len(args): enums_path = args[i+1]; i += 2
         else: pos.append(a); i += 1
     if not pos:
-        print("usage: python gherkin_to_checklist.py <验收用例.md> [out.xlsx] "
+        print("usage: python gherkin_to_checklist.py <acceptance.md> [out.xlsx] "
               "[--config <配置目录>] [--enums <枚举字典.md>] [--keymap <复合键映射.json>] [--loc <LocalizationText.xlsx>]"); sys.exit(1)
     src = pos[0]
     out = pos[1] if len(pos) > 1 else os.path.splitext(src)[0] + "-策划版.xlsx"

@@ -64,7 +64,7 @@ _CLEAN = """# manifest
 - **契约(proto)**: proto/item.proto
 - **验收**: item-验收.md
 ### S02 装备
-- **规则(-01)**: docs/equip/规则.md
+- **规则(-01)**: docs/equip/rules.md
 
 ## D. 冻结账本
 | 系统 | 状态 | 定稿时间 | 占用号段 | 待重验触发 |
@@ -129,7 +129,7 @@ def test_bad_status():
 
 def test_no_cblock():
     # 删掉 S02 的 C 分块
-    txt = _CLEAN.replace("### S02 装备\n- **规则(-01)**: docs/equip/规则.md\n", "")
+    txt = _CLEAN.replace("### S02 装备\n- **规则(-01)**: docs/equip/rules.md\n", "")
     fs = M.check_text(txt)
     assert any(f["kind"] == "NO_CBLOCK" and "S02" in f["msg"] for f in fs)
 

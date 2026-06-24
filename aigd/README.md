@@ -38,9 +38,9 @@ aigd/                  ← 本包 · 编排器 + 方法论真源
 ├── SKILL.md           编排器:读脊柱→判断进度→分派到子 skill
 ├── README.md          ← 你在看的这份
 ├── references/        方法论唯一真源(不复制、不漂移)
-│   ├── 方法论-6件套.md       设计访谈 / 命名 / 编号 / 八条门禁
-│   ├── 界面DSL规范.md        截图→DSL 的文法契约
-│   ├── 常见错误速查.md       真踩过的执行/交接/校验坑
+│   ├── methodology.md       设计访谈 / 命名 / 编号 / 八条门禁
+│   ├── ui-dsl-spec.md        截图→DSL 的文法契约
+│   ├── gotchas.md       真踩过的执行/交接/校验坑
 │   ├── templates/           脊柱三模板(项目档案 / manifest / 实现总纲)
 │   ├── patterns/            领域弹药(核心循环 / 养成范式 / 数值陷阱)
 │   └── scripts/             确定性校验/工具脚本(纯 stdlib 为主)+ 测试
@@ -75,7 +75,7 @@ aigd-ui-capture/ 工具:界面截图 → 界面 DSL
    - **必须 7 个都拷且平级**:子 skill 正文用 `../aigd/references/` 取方法论,缺 `aigd/` 或层级错就断链。
    - **不要拷** skills 目录下与 aigd 无关的其它 skill(它们是各自项目的东西);`.gitignore` 拷不拷都行。
    - 装好后该目录下应**正好**是这 7 个 `aigd`/`aigd-*` 文件夹。
-   - **换 harness**:ZCode 装 `~/.zcode/skills/`;Gemini `~/.gemini/skills/`(或 `gemini skills install <repo>` 一键装);Codex `~/.codex/skills/`(或自带 skill-installer)。`SKILL.md` 格式在这几家通用且已实测;**Copilot 1.0.63 无 skills 机制、需适配**。装哪、怎么唤起、工具名对应见 [`references/harness适配.md`](references/harness适配.md)。
+   - **换 harness**:ZCode 装 `~/.zcode/skills/`;Gemini `~/.gemini/skills/`(或 `gemini skills install <repo>` 一键装);Codex `~/.codex/skills/`(或自带 skill-installer)。`SKILL.md` 格式在这几家通用且已实测;**Copilot 1.0.63 无 skills 机制、需适配**。装哪、怎么唤起、工具名对应见 [`references/harness-adapt.md`](references/harness-adapt.md)。
 2. **跑校验器要 Python**(多数脚本纯标准库;`ui_palette`/`ui_slice` 需 Pillow,`gherkin_to_checklist` 写 xlsx 需 openpyxl,见 `references/scripts/requirements.txt`)。
 3. **新项目**:调 `aigd`(不知道在哪一步就让它路由)或直接 `aigd-concept` 立意建脊柱 → `aigd-system` 逐系统设计 → 定稿 `aigd-handoff`。
 4. **先感受**:进 [`examples/potion-crafting/`](examples/potion-crafting/),照其 README 把 3 个校验器跑一遍,看"6 件套 + 机检门控"实际长什么样。
@@ -99,8 +99,8 @@ aigd-ui-capture/ 工具:界面截图 → 界面 DSL
 
 ## 可移植 & 状态
 
-- **跨 harness**:包结构(`SKILL.md` + `name`/`description` frontmatter)在 **Claude Code / ZCode / Gemini CLI / Codex** 通用;不同的只是装哪个目录、怎么唤起、读写工具名——见 [`references/harness适配.md`](references/harness适配.md)。方法论本身不依赖任何 harness、不依赖其指令文件(`CLAUDE.md`/`AGENTS.md`/`GEMINI.md`)。校验器脚本是 argv 驱动命令行,只要有 Python 哪家都一样用。
-  > **实测状态(2026-06-23)**:已在 **Claude Code(原生·真项目)、ZCode 3.1.3(Claude 系)、Gemini CLI 0.47(Google)、Codex 0.140(OpenAI)** 四个 harness 实测跑通——发现 + 路由 + 执行全过,**含 Gemini、Codex 两个跨厂**;Gemini/Codex 还能用各自原生 installer 从本仓库一键装。**Copilot CLI 1.0.63 经实测无 SKILL.md skills 机制**(走 AGENTS.md/MCP/plugin),aigd 需适配。详见 [`references/harness适配.md`](references/harness适配.md)。
+- **跨 harness**:包结构(`SKILL.md` + `name`/`description` frontmatter)在 **Claude Code / ZCode / Gemini CLI / Codex** 通用;不同的只是装哪个目录、怎么唤起、读写工具名——见 [`references/harness-adapt.md`](references/harness-adapt.md)。方法论本身不依赖任何 harness、不依赖其指令文件(`CLAUDE.md`/`AGENTS.md`/`GEMINI.md`)。校验器脚本是 argv 驱动命令行,只要有 Python 哪家都一样用。
+  > **实测状态(2026-06-23)**:已在 **Claude Code(原生·真项目)、ZCode 3.1.3(Claude 系)、Gemini CLI 0.47(Google)、Codex 0.140(OpenAI)** 四个 harness 实测跑通——发现 + 路由 + 执行全过,**含 Gemini、Codex 两个跨厂**;Gemini/Codex 还能用各自原生 installer 从本仓库一键装。**Copilot CLI 1.0.63 经实测无 SKILL.md skills 机制**(走 AGENTS.md/MCP/plugin),aigd 需适配。详见 [`references/harness-adapt.md`](references/harness-adapt.md)。
 - **适用边界**:管设计交接的结构与一致性,**不管数值平衡**;html 原型验信息架构/流程,**验不了手感/时序/网络**(实时战斗类只验信息架构);UI 密集系统适配最好。详见仓库根 `README.md`「适用边界」。
 - **项目专属**(立意/约定/系统清单/号段)全部住**脊柱**(`项目档案`/`manifest`),不进本包——换项目换 AI,读脊柱即可接手。
 - `patterns/` 是会长大的**启动包**(目前:5 种核心循环 / 战斗单位养成范式 / 10 条数值陷阱)。

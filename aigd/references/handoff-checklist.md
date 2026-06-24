@@ -19,7 +19,7 @@
 1. **解析配置**:用 `references/scripts/xlsx_dump.py` dump 相关表(openpyxl 会因 `Colors must be aRGB` 报错,脚本走 zipfile+xml 直解);`resolve_loc.py` 解 LocalizationText 文本 id→中文。
 2. **代入**:工程版断言里的字段引用(如 `levelTable[50].value`)换成真值(如 `500`),翻成大白话操作步骤。
 3. **留痕**:每条挂 R-编号;预期里括号附「来源字段」——数值变只需照字段刷新,**逻辑不动**。
-4. **出双份**:md(人读)+ xlsx(QA)。xlsx 直接跑 `references/scripts/gherkin_to_checklist.py <…-05验收用例.md>` 生成(自动抽场景→清单页 + 说明页 + 通过下拉 + 进度公式 COUNTA/COUNTIF/IF,范围已覆盖全部行);md 人读版另排。
+4. **出双份**:md(人读)+ xlsx(QA)。xlsx 直接跑 `references/scripts/gherkin_to_checklist.py <…-05acceptance.md>` 生成(自动抽场景→清单页 + 说明页 + 通过下拉 + 进度公式 COUNTA/COUNTIF/IF,范围已覆盖全部行);md 人读版另排。
 
 ## 再同步(配置更新时,已验证)
 - 重 dump → 与上次**逐行 diff** → **只改受影响的数字**,其余不动;变化记进「更新记录」。
@@ -34,7 +34,7 @@
 - **写**:两份策划版文件;发现矛盾时在 manifest 该系统「待重验 / 待确认」栏记一笔。
 
 ## 参考实现（已毕业进包）
-- **`references/scripts/gherkin_to_checklist.py`** —— 可移植版:`python gherkin_to_checklist.py <…-05验收用例.md> [out.xlsx]`,**从 Gherkin 场景自动抽用例**(不再手列 CASES)→ 出说明页 + 清单页 xlsx。已在多个系统验证。
+- **`references/scripts/gherkin_to_checklist.py`** —— 可移植版:`python gherkin_to_checklist.py <…-05acceptance.md> [out.xlsx]`,**从 Gherkin 场景自动抽用例**(不再手列 CASES)→ 出说明页 + 清单页 xlsx。已在多个系统验证。
 - 配套 `xlsx_dump.py` / `resolve_loc.py`(解配置表 / 文本 id→中文)。
 - **脚本只做"抽场景 → 清单结构"**:断言里的字段引用(`levelTable[50].value`)的**真值代入仍需配合配置**(查 `resolve_loc` / 配表,人工或后续增强),脚本保留原始断言文本不臆造数值。
 

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""工具4 · config_check —— 配置说明.md ↔ xlsx schema 漂移校验器(纯 stdlib)。
+"""工具4 · config_check —— config-spec.md ↔ xlsx schema 漂移校验器(纯 stdlib)。
 
-为什么存在:方法论把「值」放 xlsx、「schema/规则」放文档(配置说明.md 按字段名引用 xlsx)。
+为什么存在:方法论把「值」放 xlsx、「schema/规则」放文档(config-spec.md 按字段名引用 xlsx)。
 改值不用动文档 —— 但改**结构**(加列 / 改字段域 / 改 sheet 名)是改了文档拥有的 schema,
-却改在了 xlsx 里,两边静默失同步。配置说明.md 末尾的「校验清单」写了对的检查,但它是
+却改在了 xlsx 里,两边静默失同步。config-spec.md 末尾的「校验清单」写了对的检查,但它是
 未勾的框、被自评 ✅。本脚本把那张清单的 schema 部分变成确定性机检。
 
 抓什么(高置信):
@@ -21,7 +21,7 @@ xlsx 读取复用 xlsx_dump(zipfile+ElementTree,绕开 openpyxl 对国产导表 
 无项目硬编码,路径全走 argv。
 
 用法:
-  python config_check.py <配置说明.md> <config.xlsx>
+  python config_check.py <config-spec.md> <config.xlsx>
   退出码: 有 major/MISSING_TABLE → 1,否则 0(advisory/info 不致失败)。
 """
 import sys, os, re, zipfile
@@ -132,7 +132,7 @@ def read_xlsx(path):
     return out
 
 
-# ---------------------------------------------------------------- 配置说明.md 解析
+# ---------------------------------------------------------------- config-spec.md 解析
 def parse_config_md(text):
     """带 backtick 表名的 `## 段` + 其后字段表 → {code:{fields:{name:{type,value,range,ref,is_array}}}}。
     字段表列按表头名(字段/类型/取值/范围/引用)定位,容忍列序与缺列;数组字段名归一。"""
@@ -274,7 +274,7 @@ def format_report(findings, md_path, xlsx_path):
 
 def main(argv):
     if len(argv) < 3:
-        sys.stderr.write("usage: python config_check.py <配置说明.md> <config.xlsx>\n")
+        sys.stderr.write("usage: python config_check.py <config-spec.md> <config.xlsx>\n")
         return 2
     md, xl = argv[1], argv[2]
     findings = check(md, xl)

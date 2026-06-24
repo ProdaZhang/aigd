@@ -168,7 +168,7 @@ def test_render_svg_and_determinism():
 def test_sample_dsl_consistency():
     # 随包合规样例,自包含、不依赖项目实例路径
     here = os.path.dirname(__file__)
-    path = os.path.join(here, "..", "..", "界面DSL-样例.md")
+    path = os.path.join(here, "..", "..", "ui-dsl-example.md")
     assert os.path.exists(path), path
     d = R.parse_dsl(open(path, encoding="utf-8").read())
     ids = [e["id"] for e in d["elements"] if e["id"]]

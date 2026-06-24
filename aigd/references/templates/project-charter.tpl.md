@@ -41,13 +41,13 @@
 
   | 件 | 扁平 | 工程化 |
   |----|------|--------|
-  | 规则 | `<系统>-01系统规则.md` | `docs/系统/<系统>/规则.md` |
-  | 配置说明 | `<系统>-02配置说明.md` | `config/source/<系统>-配置说明.md` |
+  | 规则 | `<系统>-01系统rules.md` | `docs/系统/<系统>/rules.md` |
+  | 配置说明 | `<系统>-02config-spec.md` | `config/source/<系统>-config-spec.md` |
   | 原型 | `<系统>-03界面原型.html` | `docs/prototypes/<系统>.html` |
   | 契约 | `<系统>-04接口契约.proto` | `proto/<系统>.proto` |
-  | 验收 | `<系统>-05验收用例.md` | `docs/系统/<系统>/<系统>-05验收用例.md`(**保留 -05**) |
+  | 验收 | `<系统>-05acceptance.md` | `docs/系统/<系统>/<系统>-05acceptance.md`(**保留 -05**) |
 
-- ⚠️ **存量 flat 项目迁移 = MOVE 不是 COPY**:复制会 flat↔docs 双真源漂移;一次性移动、迁完弃用 flat 路径。详见 `方法论-6件套.md` 第2步。
+- ⚠️ **存量 flat 项目迁移 = MOVE 不是 COPY**:复制会 flat↔docs 双真源漂移;一次性移动、迁完弃用 flat 路径。详见 `methodology.md` 第2步。
 
 ## 待确认
 - [ ] `<涉及具体数值 / 口径的待定项,等用户拍>`

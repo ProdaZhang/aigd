@@ -3,25 +3,25 @@
 方法论存这里,**不依赖任何项目**;项目专属的东西由**脊柱**(项目档案 / manifest / 实现总纲)承载。换项目换 AI,读脊柱即可接手。
 
 ## 现有
-- **方法论-6件套.md** —— 6 件套骨架 / 设计访谈 / 命名 / 编号 / 自描述表头 / 界面 DSL / 八条质量门禁 / 硬约束(由原单一 `aigd` skill 迁入)。
-- **templates/** —— 脊柱三模板(强类型):`项目档案.模板.md` / `manifest.模板.md` / `实现总纲.模板.md`;+ 改动账本模板 `CHANGELOG.模板.md`(唯一项目环境前置)。`aigd-concept` 照它建脊柱,后续各 skill 读写脊柱按它的列。
-- **界面DSL规范.md** —— **权威**界面 DSL 文法契约(文件骨架 / Layout 行文法 / 类型表 / z 分层 / 形状 / 来源语义 / 看图配方 / 皮肤与主题);`aigd-ui-capture` 第 0 步与渲染器以它为准。
+- **methodology.md** —— 6 件套骨架 / 设计访谈 / 命名 / 编号 / 自描述表头 / 界面 DSL / 八条质量门禁 / 硬约束(由原单一 `aigd` skill 迁入)。
+- **templates/** —— 脊柱三模板(强类型):`project-charter.tpl.md` / `manifest.tpl.md` / `impl-overview.tpl.md`;+ 改动账本模板 `CHANGELOG.tpl.md`(唯一项目环境前置)。`aigd-concept` 照它建脊柱,后续各 skill 读写脊柱按它的列。
+- **ui-dsl-spec.md** —— **权威**界面 DSL 文法契约(文件骨架 / Layout 行文法 / 类型表 / z 分层 / 形状 / 来源语义 / 看图配方 / 皮肤与主题);`aigd-ui-capture` 第 0 步与渲染器以它为准。
 - **scripts/** —— 可复用确定性工具脚本(argv 驱动、无项目硬编码)。**详见 `scripts/README.md`**(工具清单/用法/依赖/门禁接入/流程)。两条主线:
   - **界面知识库**:`ui_render.py`(工具2 · DSL→html/svg,纯 stdlib)/ `ui_palette.py`(工具3 · 采色→皮肤段)/ `ui_slice.py`(工具3 · 切片→接触表)。
   - **配置/交接校验**:`config_check.py`(工具4 · 配置说明↔xlsx schema 漂移)/ `value_check.py`(工具5 · 数据完整性:外键断链/验收悬空/cardinality·monotonic·coverage)/ `config_index.py`(共享层)/ `gherkin_to_checklist.py`(验收用例→策划版清单)。接进 `aigd-handoff` 定稿准入 + 模板 §7 质量门禁。
   - **底座**:`xlsx_dump.py`(zipfile+xml 解任意国产 xlsx,绕开 openpyxl `Colors must be aRGB` 报错)/ `resolve_loc.py`(LocalizationText 文本 id→中文)。`checks/<系统>.checks.json` 领域规则 + `tests/`(stdlib runner)。
 - **example.skin.json** —— 按类型的**示例**主题皮肤,`ui_render.py --skin` 套用演示;用户按自己视觉规范(项目档案『美术风格/品牌』指定)替换配色。
-- **handoff-策划版验收清单.md** —— `aigd-handoff` 子能力:配置 → 策划版验收清单(md + xlsx)的配方与读写契约(已试跑通过)。
+- **handoff-checklist.md** —— `aigd-handoff` 子能力:配置 → 策划版验收清单(md + xlsx)的配方与读写契约(已试跑通过)。
 - **patterns/** —— **领域知识弹药**(方法论给"流程",这里给"领域知识",供 concept/system 访谈当引导者时砍弱方向/提口径):
-  - `玩法范式/常见核心循环.md` —— 5 种核心循环模板(收集养成验证 / 探索建造 / PVP / 抽卡推图 / 经济),每种含驱动变量·反馈·失速点·访谈要问什么。
-  - `玩法范式/战斗单位-多维养成.md` —— 战斗单位多维养成范式(收集养成类:收集单位≠形态单位、品质封顶、累计vs增量、补全数据、解锁参数化)。
-  - `数值坑集/常见数值陷阱.md` —— 10 条数值/经济陷阱 + ⚠️真踩过的(哨兵撞车 / 累计混淆)+ 坑↔机检工具速查。
+  - `loops/core-loops.md` —— 5 种核心循环模板(收集养成验证 / 探索建造 / PVP / 抽卡推图 / 经济),每种含驱动变量·反馈·失速点·访谈要问什么。
+  - `loops/battle-unit-progression.md` —— 战斗单位多维养成范式(收集养成类:收集单位≠形态单位、品质封顶、累计vs增量、补全数据、解锁参数化)。
+  - `numeric-traps/numeric-traps.md` —— 10 条数值/经济陷阱 + ⚠️真踩过的(哨兵撞车 / 累计混淆)+ 坑↔机检工具速查。
   - `界面范式/` —— `aigd-ui-capture` 把竞品/自家截图入库的界面 DSL 库(随用随攒)。
-- **常见错误速查.md** —— 本包迭代 + 消费端验证中真踩过的坑速查(被 `方法论-6件套.md` 指向,system/handoff 前过一遍)。
-- **harness适配.md** —— 跨 harness 的装法/唤起/工具名对应 + 实测状态:包结构在 Claude Code / ZCode / Gemini / Codex 通用(均已实测,含 Gemini/Codex 两个跨厂);**Copilot 1.0.63 无 skills 机制、需适配**。
+- **gotchas.md** —— 本包迭代 + 消费端验证中真踩过的坑速查(被 `methodology.md` 指向,system/handoff 前过一遍)。
+- **harness-adapt.md** —— 跨 harness 的装法/唤起/工具名对应 + 实测状态:包结构在 Claude Code / ZCode / Gemini / Codex 通用(均已实测,含 Gemini/Codex 两个跨厂);**Copilot 1.0.63 无 skills 机制、需适配**。
 
 ## 待补(TODO,建包后续充实)
-- **编号与量纲规则.md / 质量门禁.md / 命名规范.md** —— 目前内联在「方法论-6件套.md」;具体内容在各项目的全局规范(路径走脊柱「项目档案」指定的规范目录,非包内固定路径)。后续抽离为**可移植副本**。
+- **编号与量纲rules.md / 质量门禁.md / 命名规范.md** —— 目前内联在「methodology.md」;具体内容在各项目的全局规范(路径走脊柱「项目档案」指定的规范目录,非包内固定路径)。后续抽离为**可移植副本**。
 - **patterns/ 领域知识弹药** —— 已落地最小启动包(核心循环 / 战斗养成范式 / 数值陷阱,见上「现有」);**随项目继续攒**(更多玩法范式、品类专项坑、界面范式由 ui-capture 入库)。
 
 ## 项目层 vs 包层(别混)

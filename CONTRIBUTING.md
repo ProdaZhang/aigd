@@ -1,34 +1,34 @@
-# 贡献指南（AIGD）
+# Contributing guide (AIGD)
 
-## 跑测试
+## Running tests
 
-校验器/工具脚本有纯 stdlib 测试(**非 pytest**:每个 test 文件自带 runner)。
+The checker / tool scripts have pure-stdlib tests (**not pytest**: each test file ships its own runner).
 
 ```bash
 cd aigd/references/scripts
-for t in tests/test_*.py; do python "$t"; done     # 逐个跑,末行打 N/N passed
-pip install -r requirements.txt                     # 仅 ui_palette/slice(Pillow)、gherkin(openpyxl)需要
+for t in tests/test_*.py; do python "$t"; done     # run one by one, last line prints N/N passed
+pip install -r requirements.txt                     # only ui_palette/slice (Pillow) and gherkin (openpyxl) need it
 ```
 
-CI(`.github/workflows/tests.yml`)在 push/PR 上跑全套。改脚本必须保持全绿。
+CI (`.github/workflows/tests.yml`) runs the whole suite on push/PR. Changing a script must keep everything green.
 
-## 核心原则（改之前先懂）
+## Core principles (understand before changing)
 
-1. **单一真源,不复制**:方法论只在 `aigd/references/`,6 个子 skill 是**薄路由壳**,正文用 `../aigd/references/` 取方法论。**别把方法论内容抄进子 skill**——会 5 处漂移。
-2. **脚本:argv 驱动、零项目硬编码、确定性**(无 `Date.now`/随机)。读 xlsx 一律走 `xlsx_dump`(绕开 openpyxl 对国产导表的样式报错),只有"写 xlsx"才用 openpyxl。
-3. **不含任何具体项目**:示例/测试夹具用中性示意名(`unit`/`evolveLine`/`potion`…),不写死真实游戏的表名/数值/路径。
-4. **校验器宁可漏报不误报**:解不出/查不到 → 显式标记(`*_SKIP` info),不静默漏、不臆造。
+1. **Single source of truth, no copying**: the methodology lives only in `aigd/references/`, the 6 sub-skills are **thin routing shells** whose bodies use `../aigd/references/` to fetch the methodology. **Don't copy the methodology content into the sub-skills** — that's 5 places to drift.
+2. **Scripts: argv-driven, zero project hardcoding, deterministic** (no `Date.now`/randomness). Reading xlsx always goes through `xlsx_dump` (sidesteps openpyxl's style errors on domestically-exported tables), only "writing xlsx" uses openpyxl.
+3. **Contains no specific project**: examples / test fixtures use neutral illustrative names (`unit`/`evolveLine`/`potion`…), don't hardcode a real game's table names / numbers / paths.
+4. **Checkers would rather under-report than false-positive**: can't parse / can't find → flag explicitly (`*_SKIP` info), don't silently drop, don't fabricate.
 
-## 怎么加东西
+## How to add things
 
-- **加一条领域规则**:在某 `<系统>.checks.json` 按 `value_check.py` 顶部的规则 schema 写(`cardinality`/`coverage`/`monotonic`),样例见 `aigd/references/scripts/checks/example.checks.json`。
-- **加一个 patterns 弹药**:放 `aigd/references/patterns/<玩法范式|数值坑集|界面范式>/`,中性化、可移植,并在 `references/README.md` 现有清单登记。
-- **加一个校验器**:纯 stdlib + argv + 配 `tests/test_*.py`(内存夹具,跑通"埋错能抓 + 干净不误报"),在 `scripts/README.md` 登记类别/严重度。
-- **改 SKILL.md**:保持薄,只路由 + 准入/准出,方法论指向 references。
+- **Add a domain rule**: in some `<system>.checks.json`, write it per the rule schema at the top of `value_check.py` (`cardinality`/`coverage`/`monotonic`), sample in `aigd/references/scripts/checks/example.checks.json`.
+- **Add a patterns round**: put it in `aigd/references/patterns/<loops|numeric-traps|ui-patterns>/`, neutralized and portable, and register it in the existing list in `references/README.md`.
+- **Add a checker**: pure stdlib + argv + a matching `tests/test_*.py` (in-memory fixtures, running through "planted error gets caught + clean doesn't false-positive"), register the category / severity in `scripts/README.md`.
+- **Change a SKILL.md**: keep it thin, just routing + admission/exit, point the methodology to references.
 
-## 约定
+## Conventions
 
-- 文件 **UTF-8 无 BOM**;跨平台用 `/` 路径。各 harness 写法见 `aigd/references/harness-adapt.md`。
-- markdown 表格内容列**别用裸 `|`**(撑乱表格)——用 `/` 或 `\|`。
-- 工具调用用你 harness 要求的 function-call 格式,**发后复核产物真落盘**(读文件/`ls`),别假设已生效。
-- 跨 harness:包结构在 Claude Code / ZCode / Gemini / Codex 通用(均已实测;Copilot 1.0.63 无 skills 机制,见 `harness-adapt.md`)。提 PR 前若能在更多 harness 上实测安装跑通,欢迎在 PR 里说一声。
+- Files are **UTF-8 without BOM**; use `/` paths cross-platform. Per-harness writing methods are in `aigd/references/harness-adapt.md`.
+- In markdown table content columns, **don't use a bare `|`** (it breaks the table apart) — use `/` or `\|`.
+- Make tool calls in the function-call format your harness requires, and **after sending, re-verify the artifact actually landed** (read the file / `ls`), don't assume it took effect.
+- Cross-harness: the package structure is common across Claude Code / ZCode / Gemini / Codex (all tested; Copilot 1.0.63 has no skills mechanism, see `harness-adapt.md`). Before opening a PR, if you can test-install and run it on more harnesses, please say so in the PR.

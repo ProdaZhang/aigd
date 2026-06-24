@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
-"""工具5 · value_check —— 配置数据完整性校验(纯 stdlib,复用 config_index + config_check)。
+"""Tool 5 - value_check -- config-data integrity validation (pure stdlib, reuses config_index + config_check).
 
-schema 校验器(config_check)管「结构对不对」;本工具管「数据本身/数据之间对不对」:
-  FK_BREAK      配置说明 引用列 `表.字段` 外键:源列有值在目标列找不到(断链)
-  ACC_DANGLING  验收用例里的 `表[主键].字段` 引用解析不到配置行(悬空引用)
-  RULE_*        选填规则文件(<系统>.checks.json)的领域约束:
-                  cardinality 数组成员数 vs 另一表的值(如 进化链长−1 ≤ 品质可进化次数)
-                  monotonic   字段随档位单调不减(如 *Percentage,可按 group_fields 分组)
-                  coverage    整数主键连续覆盖 [min,max] 无断档
-跨文档引用(枚举字典.X / 属性列表.md / 道具表 这类非机器句柄)→ 记 FK_SKIP(info),不静默漏。
+The schema validator (config_check) handles "is the structure right"; this tool handles "is the data itself / between data right":
+  FK_BREAK      foreign key from a config-spec Ref column `Table.field`: a source column has a value not found in the target column (broken link)
+  ACC_DANGLING  a `Table[primary key].field` reference in an acceptance case does not resolve to a config row (dangling reference)
+  RULE_*        domain constraints from an optional rules file (<system>.checks.json):
+                  cardinality  array member count vs another table's value (e.g. evolution chain length - 1 <= rarity max evolutions)
+                  monotonic    a field is non-decreasing along a tier (e.g. *Percentage, can be grouped by group_fields)
+                  coverage     integer primary key covers [min,max] contiguously with no gaps
+Cross-document references (enum-dict.X / attribute-list.md / item-table and similar non-machine handles) -> recorded as FK_SKIP (info), not silently dropped.
 
-用法:
-  python value_check.py <config-spec.md> <配置目录> [--acc <acceptance.md>]
-        [--rules <系统.checks.json>] [--enums <枚举字典.md>] [--keymap <复合键映射.json>]
-  退出码: 有 major(FK_BREAK / RULE_CARDINALITY) → 1。
+Usage:
+  python value_check.py <config-spec.md> <config dir> [--acc <acceptance.md>]
+        [--rules <system.checks.json>] [--enums <enum-dict.md>] [--keymap <composite-key-map.json>]
+  Exit code: any major (FK_BREAK / RULE_CARDINALITY) -> 1.
 """
 import sys, os, re, json
 
@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config_index as CI
 import config_check as CC
 
-_TF_RE = re.compile(r"^([^\s.]+)\.([^\s.]+)$")   # `表.字段`(含中文表名,如 枚举字典.Rarity → 记 FK_SKIP)
-_NULL_FK = {"0", "0.0"}    # 外键空哨兵:本项目 id 恒为正,0=无引用(末阶/无前置等),不参与断链判定
+_TF_RE = re.compile(r"^([^\s.]+)\.([^\s.]+)$")   # `Table.field` (incl. Chinese table names, e.g. enum-dict.Rarity -> recorded as FK_SKIP)
+_NULL_FK = {"0", "0.0"}    # foreign-key null sentinel: in this project ids are always positive, 0 = no reference (last stage / no predecessor etc.), not part of broken-link checks
 
 
 def _int(v):
@@ -36,49 +36,49 @@ def _col(row, c):
     return row[c] if (c is not None and c < len(row)) else None
 
 
-# ---------------------------------------------------------------- 外键
+# ---------------------------------------------------------------- foreign keys
 def check_fk(doc, idx, refmap=None):
-    """外键断链。引用列 `表.字段`(英文)直接解析;中文名/文档名经 refmap 映射(跨文件)。
-    数组源(is_array)逐成员校验(v3);0/空哨兵不参与。"""
+    """Foreign-key broken links. A Ref column `Table.field` (English) resolves directly; Chinese names / doc names are mapped via refmap (cross-file).
+    Array sources (is_array) are checked per member (v3); 0/empty sentinels are excluded."""
     refmap = refmap or {}
     findings = []
     for table in sorted(doc):
         for fn in sorted(doc[table]["fields"]):
             fld = doc[table]["fields"][fn]
             ref = (fld.get("ref") or "").strip().strip("`").strip()
-            tgt = refmap.get(ref)                  # 中文名/文档名 → 英文 表.字段
+            tgt = refmap.get(ref)                  # Chinese name / doc name -> English Table.field
             m = _TF_RE.match(tgt if tgt else ref)
             if not m:
-                continue                           # 非外键引用(—/纯中文未登记/外部标记)
+                continue                           # not a foreign-key reference (—/pure Chinese not registered/external marker)
             tgt_t, tgt_f = m.group(1), m.group(2)
             if fld.get("is_array"):
                 srcvals = CI.array_column_values(idx, table, fn)
                 if srcvals is None:
                     findings.append({"sev": "info", "kind": "FK_SKIP", "table": table, "field": fn,
-                                     "msg": "数组源 '%s.%s'→'%s.%s' 表头未识别为数组列,跳过" % (table, fn, tgt_t, tgt_f)})
+                                     "msg": "array source '%s.%s'->'%s.%s' header not recognized as an array column, skipped" % (table, fn, tgt_t, tgt_f)})
                     continue
-                lbl = "数组成员"
+                lbl = "array member"
             else:
                 srcvals = CI.column_values(idx, table, fn)
                 if srcvals is None:
-                    continue                       # 源表/列不在 idx(如改名表)→ 交 schema 校验器
+                    continue                       # source table/column not in idx (e.g. renamed table) -> leave to schema validator
                 lbl = ""
             tgtvals = CI.column_values(idx, tgt_t, tgt_f)
             if tgtvals is None:
                 findings.append({"sev": "info", "kind": "FK_SKIP", "table": table, "field": fn,
-                                 "msg": "引用 '%s.%s' 目标不在配置表中(未登记/跨文档),跳过" % (tgt_t, tgt_f)})
+                                 "msg": "reference '%s.%s' target not in config tables (not registered/cross-document), skipped" % (tgt_t, tgt_f)})
                 continue
             bad = sorted((srcvals - _NULL_FK) - tgtvals, key=lambda x: (len(x), x))
             if bad:
-                more = " …共%d个" % len(bad) if len(bad) > 5 else ""
+                more = " ...%d in total" % len(bad) if len(bad) > 5 else ""
                 findings.append({"sev": "major", "kind": "FK_BREAK", "table": table, "field": fn,
-                                 "msg": "'%s.%s'%s→'%s.%s' 外键断链,源有值目标缺: %s%s" % (
+                                 "msg": "'%s.%s'%s->'%s.%s' foreign-key broken link, source has values the target lacks: %s%s" % (
                                      table, fn, ("(%s)" % lbl if lbl else ""), tgt_t, tgt_f,
                                      ",".join(bad[:5]), more)})
     return findings
 
 
-# ---------------------------------------------------------------- 验收引用解析
+# ---------------------------------------------------------------- acceptance reference resolution
 def check_acceptance(acc_text, idx):
     findings, seen = [], set()
     for m in CI.REF_RE.finditer(acc_text):
@@ -87,10 +87,10 @@ def check_acceptance(acc_text, idx):
         if k in seen:
             continue
         seen.add(k)
-        # 只报『行不存在』的悬空引用;字段空值(可选字段)不算断链,避免误报
+        # Only report 'row does not exist' dangling references; an empty field value (optional field) is not a broken link, to avoid false positives
         if table in idx and CI.row_exists(idx, table, keystr) is False:
             findings.append({"sev": "advisory", "kind": "ACC_DANGLING", "table": table, "field": field,
-                             "msg": "验收引用 '%s' 配置中无此行(主键命不中=悬空引用)" % ref})
+                             "msg": "acceptance reference '%s' has no such row in config (primary key miss = dangling reference)" % ref})
     return sorted(findings, key=lambda f: f["msg"])
 
 
@@ -100,11 +100,11 @@ def _rule_cardinality(rule, idx):
     t = idx.get(at)
     if not t:
         return [{"sev": "info", "kind": "RULE_SKIP", "table": at, "field": af,
-                 "msg": "cardinality: 数组表 '%s' 不在配置表" % at}]
+                 "msg": "cardinality: array table '%s' not in config tables" % at}]
     start = t["fieldcol"].get(af)
     if start is None:
         return [{"sev": "info", "kind": "RULE_SKIP", "table": at, "field": af,
-                 "msg": "cardinality: 数组字段 '%s' 未找到" % af}]
+                 "msg": "cardinality: array field '%s' not found" % af}]
     idc = t["fieldcol"].get("id", 0)
     out = []
     for row in t["data"]:
@@ -121,7 +121,7 @@ def _rule_cardinality(rule, idx):
         if evo > _int(limit):
             gid = _col(row, idc) or "?"
             out.append({"sev": rule.get("severity", "major"), "kind": "RULE_CARDINALITY", "table": at, "field": af,
-                        "msg": "%s[%s] 链长 %d(=%d 段进化) > %s[%s].%s=%s(超出成员在该上限下不可达)" % (
+                        "msg": "%s[%s] chain length %d (=%d evolution steps) > %s[%s].%s=%s (members beyond this limit are unreachable)" % (
                             at, gid, len(members), evo, rule["limit_table"], rarity, rule["limit_field"], limit)})
     return out
 
@@ -130,17 +130,17 @@ def _rule_coverage(rule, idx):
     t = idx.get(rule["table"])
     if not t:
         return [{"sev": "info", "kind": "RULE_SKIP", "table": rule["table"], "field": rule["field"],
-                 "msg": "coverage: 表不在配置"}]
+                 "msg": "coverage: table not in config"}]
     fc = t["fieldcol"].get(rule["field"])
     if fc is None:
         return [{"sev": "info", "kind": "RULE_SKIP", "table": rule["table"], "field": rule["field"],
-                 "msg": "coverage: 字段未找到"}]
+                 "msg": "coverage: field not found"}]
     vals = set(v for v in (_int(_col(row, fc)) for row in t["data"]) if v is not None)
     missing = [i for i in range(rule["min"], rule["max"] + 1) if i not in vals]
     if missing:
-        more = " …共%d个" % len(missing) if len(missing) > 8 else ""
+        more = " ...%d in total" % len(missing) if len(missing) > 8 else ""
         return [{"sev": "advisory", "kind": "RULE_COVERAGE", "table": rule["table"], "field": rule["field"],
-                 "msg": "%s.%s 未连续覆盖 [%d,%d],缺: %s%s" % (
+                 "msg": "%s.%s does not contiguously cover [%d,%d], missing: %s%s" % (
                      rule["table"], rule["field"], rule["min"], rule["max"],
                      ",".join(str(x) for x in missing[:8]), more)}]
     return []
@@ -150,14 +150,14 @@ def _rule_monotonic(rule, idx):
     t = idx.get(rule["table"])
     if not t:
         return [{"sev": "info", "kind": "RULE_SKIP", "table": rule["table"], "field": rule["field"],
-                 "msg": "monotonic: 表不在配置"}]
+                 "msg": "monotonic: table not in config"}]
     ff = t["fieldcol"].get(rule["field"])
     of = t["fieldcol"].get(rule["order_field"])
     groups = rule.get("group_fields", [])
     gcols = [t["fieldcol"].get(g) for g in groups]
     if ff is None or of is None or any(c is None for c in gcols):
         return [{"sev": "info", "kind": "RULE_SKIP", "table": rule["table"], "field": rule["field"],
-                 "msg": "monotonic: 字段/分组列未找到"}]
+                 "msg": "monotonic: field/group column not found"}]
     buckets = {}
     for row in t["data"]:
         gkey = tuple(str(_col(row, c) or "") for c in gcols)
@@ -172,7 +172,7 @@ def _rule_monotonic(rule, idx):
             if pairs[i][1] < pairs[i - 1][1]:
                 gtxt = (" group=%s" % ",".join(gkey)) if groups else ""
                 out.append({"sev": "advisory", "kind": "RULE_MONOTONIC", "table": rule["table"], "field": rule["field"],
-                            "msg": "%s.%s 非单调:按 %s 第 %d 档 %d→%d 下降%s" % (
+                            "msg": "%s.%s non-monotonic: by %s at tier %d it drops %d->%d%s" % (
                                 rule["table"], rule["field"], rule["order_field"],
                                 pairs[i][0], pairs[i - 1][1], pairs[i][1], gtxt)})
                 break
@@ -190,18 +190,18 @@ def run_rules(rules, idx):
             findings += fn(rule, idx)
         else:
             findings.append({"sev": "info", "kind": "RULE_UNKNOWN", "table": rule.get("table"), "field": None,
-                             "msg": "未知规则类型 '%s',跳过" % rule.get("type")})
+                             "msg": "unknown rule type '%s', skipped" % rule.get("type")})
     return findings
 
 
-# ---------------------------------------------------------------- 顶层
+# ---------------------------------------------------------------- top level
 def check(config_md_path, config_dir, acc_path=None, rules_path=None,
           enums_path=None, keymap_path=None, refmap_path=None):
     with open(config_md_path, encoding="utf-8") as f:
         doc = CC.parse_config_md(f.read())
     idx = CI.build_index(config_dir)
     if not keymap_path:
-        auto = os.path.join(config_dir, "复合键映射.json")
+        auto = os.path.join(config_dir, "composite-key-map.json")
         if os.path.exists(auto):
             keymap_path = auto
     if keymap_path and os.path.exists(keymap_path):
@@ -215,7 +215,7 @@ def check(config_md_path, config_dir, acc_path=None, rules_path=None,
         except Exception:
             pass
     if not refmap_path:
-        auto = os.path.join(config_dir, "引用表映射.json")
+        auto = os.path.join(config_dir, "ref-table-map.json")
         if os.path.exists(auto):
             refmap_path = auto
     refmap = {}
@@ -240,20 +240,20 @@ _SEV = {"major": 0, "advisory": 1, "info": 2}
 
 
 def format_report(findings, args):
-    out = ["配置数据完整性校验(value_check)", "  " + "  ".join(args), ""]
+    out = ["config-data integrity validation (value_check)", "  " + "  ".join(args), ""]
     if not findings:
-        out.append("✓ 无问题:外键无断链、验收引用可解析、规则约束通过。")
+        out.append("OK no problems: foreign keys unbroken, acceptance references resolve, rule constraints pass.")
         return "\n".join(out)
     nm = sum(1 for f in findings if f["sev"] == "major")
     na = sum(1 for f in findings if f["sev"] == "advisory")
     ni = sum(1 for f in findings if f["sev"] == "info")
-    out.append("发现 %d 条(major=%d advisory=%d info=%d):" % (len(findings), nm, na, ni))
+    out.append("found %d (major=%d advisory=%d info=%d):" % (len(findings), nm, na, ni))
     out.append("")
     tag = {"major": "[major]", "advisory": "[advisory]", "info": "[info]"}
     for f in sorted(findings, key=lambda x: (_SEV[x["sev"]], x["kind"], x.get("table") or "")):
         out.append("  %-10s %-16s %s" % (tag[f["sev"]], f["kind"], f["msg"]))
     out.append("")
-    out.append("major(FK_BREAK / RULE_CARDINALITY)须修数据/规则后重跑;advisory 请人工判定。")
+    out.append("major (FK_BREAK / RULE_CARDINALITY) must be fixed in data/rules, then re-run; advisory needs human judgment.")
     return "\n".join(out)
 
 
@@ -266,10 +266,10 @@ def main(argv):
         else:
             pos.append(a); i += 1
     if len(pos) < 2:
-        sys.stderr.write("usage: python value_check.py <config-spec.md> <配置目录> "
-                         "[--acc <acceptance.md>] [--rules <系统.checks.json>] "
-                         "[--enums <枚举字典.md>] [--keymap <复合键映射.json>] "
-                         "[--refmap <引用表映射.json>]\n")
+        sys.stderr.write("usage: python value_check.py <config-spec.md> <config dir> "
+                         "[--acc <acceptance.md>] [--rules <system.checks.json>] "
+                         "[--enums <enum-dict.md>] [--keymap <composite-key-map.json>] "
+                         "[--refmap <ref-table-map.json>]\n")
         return 2
     findings = check(pos[0], pos[1], acc_path=opt.get("acc"), rules_path=opt.get("rules"),
                      enums_path=opt.get("enums"), keymap_path=opt.get("keymap"),

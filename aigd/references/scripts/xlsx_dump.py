@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
-"""可移植 xlsx dumper —— zipfile + ElementTree。
+"""Portable xlsx dumper -- zipfile + ElementTree.
 
-为什么不用 openpyxl:很多国产导表工具导出的 xlsx 会让 openpyxl 报
-`Colors must be aRGB hex values`。本脚本绕开样式表,直解 XML。
+Why not openpyxl: many domestic table-export tools produce xlsx files that make
+openpyxl raise `Colors must be aRGB hex values`. This script bypasses the style
+sheet and parses the XML directly.
 
-用法:
+Usage:
   python xlsx_dump.py <file.xlsx> [out.txt] [max_rows]
-    - 给 out.txt → 写 UTF-8 文件(中文务必写文件再看,控制台直接 print 可能乱码)
-    - 不给 out  → 输出到 stdout(UTF-8 bytes)
-    - max_rows  → 每 sheet 取前 N 行(默认 60),够看自描述表头 + 样例
+    - with out.txt -> write a UTF-8 file (always write Chinese to a file before
+      viewing; printing directly to the console may show garbled text)
+    - without out  -> output to stdout (UTF-8 bytes)
+    - max_rows     -> take the first N rows per sheet (default 60), enough to see
+      the self-describing header + samples
 
-自描述表头约定(行1=表英文名 / 行2=类型 / 行3=字段key(数组 field[…]) / 行4=中文名 / 行5+=数据)。
-无项目硬编码:路径全走 argv。
+Self-describing header convention (row1=English table name / row2=type /
+row3=field key (array field[...]) / row4=Chinese name / row5+=data).
+No project hard-coding: all paths come from argv.
 """
 import zipfile, re, os, sys
 import xml.etree.ElementTree as ET
@@ -36,7 +40,7 @@ def load_shared_strings(z):
     return out
 
 def sheet_map(z):
-    """[(显示名, sheet xml 路径)]，按 workbook 顺序。"""
+    """[(display name, sheet xml path)], in workbook order."""
     wb   = ET.fromstring(z.read("xl/workbook.xml"))
     rels = ET.fromstring(z.read("xl/_rels/workbook.xml.rels"))
     rid  = {r.get("Id"): r.get("Target") for r in rels}

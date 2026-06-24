@@ -1,62 +1,62 @@
 ---
 name: aigd
-description: AIGD(AI Game Design)总入口 / 编排器。当用户要**从零开张一个游戏项目**、**不确定该用哪个阶段**、想**总览或推进整条研发流程**,或要**维护项目脊柱(项目档案/manifest)**时使用。本 skill 只做"读脊柱→判断进度→分派到对应子 skill";**已经明确某一步(立意/做系统/迭代/定稿/回写/截图入库)就直接用对应子 skill**(aigd-concept / aigd-system / aigd-iterate / aigd-handoff / aigd-sync / aigd-ui-capture)。方法论自带于 references/,不依赖具体项目。
+description: AIGD (AI Game Design) main entry / orchestrator. Use this when the user wants to **start a game project from scratch**, is **unsure which phase to use**, wants to **survey or advance the entire development pipeline**, or needs to **maintain the project spine (project charter / manifest)**. This skill only does "read the spine → judge progress → dispatch to the matching sub-skill"; **if a specific step is already clear (concept / build a system / iterate / finalize / sync-back / screenshot capture), use the corresponding sub-skill directly** (aigd-concept / aigd-system / aigd-iterate / aigd-handoff / aigd-sync / aigd-ui-capture). The methodology ships with references/ and does not depend on any specific project.
 ---
 
-# AIGD · 编排器(orchestrator)
+# AIGD · orchestrator
 
-AIGD = **AI Game Design**。一套**可移植**的 AI 游戏研发方法论包:覆盖 **头脑风暴 → 系统设计 → 试玩迭代 → 定稿交接**,产出"另一个 AI 能直接照着开发"的**交接包**(平台无关);**落地实现(选技术栈写客户端/服务端)不在本包**,留给未来单独的落地 skill。
+AIGD = **AI Game Design**. A **portable** AI game-development methodology package: covering **brainstorming → system design → playtest iteration → finalization & handoff**, producing a **handoff package** (platform-agnostic) that "another AI can develop directly from"; **landing the implementation (picking a tech stack to write the client/server) is not in this package** and is left to a future dedicated landing skill.
 
-> 状态:**骨架**。各子 skill 与部分 references 待充实(见各文件 TODO / `references/README.md`)。
+> Status: **skeleton**. The sub-skills and parts of the references still need fleshing out (see the TODO in each file / `references/README.md`).
 
-## 核心模型(细节以 references/ 为准)
-- **两层**:① 活的**项目层(脊柱)**——`项目档案`(立意/平台/目标用户/品类/风格/命名约定)+ `manifest`(系统清单 + 依赖图 + 跨层索引 + 冻结账本 + 号段登记),持续修订;② **每系统生产循环**。
-- **集中真源**:枚举 / 编号 / 接口契约 / 配置表 归项目层;**双份**(系统 + 全局):验收 / 资源需求 / 原型;**纯系统层**:规则 / 后端算法。
-- **每个操作都**:读脊柱 → 干活 → 写回脊柱。下层发现(新系统/新依赖/新枚举/改立意)反向回写上层。
-- 方法论真源:`references/methodology.md`、`references/README.md`。
+## Core model (details defer to references/)
+- **Two layers**: ① the live **project layer (spine)** — `project charter` (concept / platform / target users / genre / style / naming conventions) + `manifest` (system list + dependency graph + cross-layer index + freeze ledger + number-range registry), continuously revised; ② the **per-system production loop**.
+- **Centralized source of truth**: enums / numbering / interface contracts / config tables belong to the project layer; **dual copies** (system + global): acceptance / resource needs / prototype; **system-layer only**: rules / backend algorithms.
+- **Every operation**: read the spine → do the work → write back to the spine. Lower-layer discoveries (new system / new dependency / new enum / changed concept) write back up to the upper layer.
+- Methodology source of truth: `references/methodology.md`, `references/README.md`.
 
-## 路由:按"这次想干啥"派子 skill
-| 你要做的 | 子 skill |
+## Routing: dispatch a sub-skill by "what you want to do this time"
+| What you want to do | Sub-skill |
 |---|---|
-| 立意 / 核心循环 / 平台 / 目标用户 / 拆系统 | **aigd-concept** |
-| 设计某系统(规则 + 配置测试数据 + html 原型) | **aigd-system** |
-| 试玩后优化某系统(规则/配置/原型,可反复) | **aigd-iterate** |
-| 某系统定稿 → 契约 / 验收 / 端文档 / 策划版验收清单 | **aigd-handoff** |
-| 回写全局规范 / 整体原型 / 实现总纲;共享项变更标重验 | **aigd-sync** |
-| 界面截图 → 界面 DSL(攒 patterns 界面范式知识库,供设计时检索参考) | **aigd-ui-capture** |
+| Concept / core loop / platform / target users / split into systems | **aigd-concept** |
+| Design a system (rules + config test data + html prototype) | **aigd-system** |
+| Optimize a system after playtest (rules/config/prototype, repeatable) | **aigd-iterate** |
+| Finalize a system → contract / acceptance / client-server docs / designer-facing acceptance checklist | **aigd-handoff** |
+| Sync back the global spec / overall prototype / implementation master guide; mark recheck on shared-item changes | **aigd-sync** |
+| UI screenshot → UI DSL (build up the patterns UI-paradigm knowledge base, for design-time retrieval & reference) | **aigd-ui-capture** |
 
-## 用法
-1. **先读脊柱**(项目档案 + manifest)判断:项目到了哪一步、这次的系统处于什么状态、缺什么。
-2. 没有脊柱 → 先 `aigd-concept` 起项目(建脊柱)。
-3. 选对应子 skill,**用 Skill 工具 invoke 它**执行;各子 skill 都读写同一脊柱,保持一致与可重入(跨会话/换 AI 可接手)。
-4. 典型路径:concept(一次)→ 每系统 {system → iterate…(反复)→ handoff 定稿} → sync(持续)。**iterate 完不直接进 sync**——sync 准入要「系统已 `定稿`」,而只有 handoff 能定稿;顺序非强制,按需路由。
+## Usage
+1. **Read the spine first** (project charter + manifest) to judge: which step the project has reached, what state this time's system is in, what's missing.
+2. No spine → start the project with `aigd-concept` first (build the spine).
+3. Pick the matching sub-skill and **invoke it with the Skill tool** to run; every sub-skill reads and writes the same spine, keeping it consistent and re-entrant (can be picked up across sessions / by another AI).
+4. Typical path: concept (once) → per system {system → iterate… (repeated) → handoff finalize} → sync (continuous). **iterate does not go straight into sync** — sync admission requires the system to be already `Final`, and only handoff can finalize; ordering is not enforced, route as needed.
 
-> **无脊柱时**(首次在某项目用、`项目档案`/`manifest` 还不存在):"读脊柱"会扑空 → 直接 route `aigd-concept` 起脊柱,属正常、不是错误。
+> **When there's no spine** (first time using it on a project, `project charter` / `manifest` don't exist yet): "read the spine" comes up empty → route directly to `aigd-concept` to start the spine; this is normal, not an error.
 
-## 开局自检（每次进 /aigd 先跑 —— 主动推进,别等用户猜)
-1. **脊柱在不在?** 在 → 读 `项目档案.md` + `manifest.md`;不在 → route `aigd-concept` 起项目。
-2. **哪些系统状态 ≠ `定稿`?** 列出,问用户这次推哪个。
-3. **有 `待重验` 系统?** 提醒先重验(某共享项变过)→ route `aigd-sync` 结清(重验通过回 `定稿` / 不过打回)。
-4. **号段冲突 / 依赖图有环?** 检查并报告。
+## Opening self-check (run on every entry into /aigd — proactively drive forward, don't wait for the user to guess)
+1. **Does the spine exist?** Yes → read `project-charter.md` + `manifest.md`; No → route to `aigd-concept` to start the project.
+2. **Which systems have status ≠ `Final`?** List them, ask the user which to push this time.
+3. **Any `Recheck` systems?** Remind to recheck first (some shared item changed) → route to `aigd-sync` to settle (recheck pass → back to `Final` / fail → bounce back).
+4. **Number-range conflicts / cycles in the dependency graph?** Check and report.
 
-## 状态流转（非线性 · 带回退)
+## State transitions (non-linear · with rollback)
 ```
-概念 ──→ 系统设计 ⇄ 试玩迭代 ──→ 定稿 ──→ 整合
- ▲           │            │         │(打回)
- │           │            │         ▼
- │           └─边界画错────┴─────→ 回试玩/回概念
- └────────── 整合发现不兼容 / 需重拆 ──────────┘
+concept ──→ system design ⇄ playtest iteration ──→ finalize ──→ integration
+ ▲             │              │            │(bounce)
+ │             │              │            ▼
+ │             └─boundary mis-drawn──┴────→ back to playtest / back to concept
+ └────────── integration finds incompatibility / needs re-split ──────────┘
 ```
-- 任何**打回 / 重拆**都在 manifest「回退记录」记一笔,并按「打回规则」反查 `被依赖`,把下游已定稿系统标 `待重验`(见 `aigd-handoff` / `aigd-sync`)。
-- 模板:`references/templates/`(项目档案 / manifest / 实现总纲,强类型)。
+- Any **bounce / re-split** records an entry in the manifest "rollback log", and per the "bounce rules" reverse-looks-up `depended-on-by`, marking already-finalized downstream systems as `Recheck` (see `aigd-handoff` / `aigd-sync`).
+- Templates: `references/templates/` (project charter / manifest / implementation master guide, strongly typed).
 
-## 包结构(整包安装,勿拆)
-`aigd`(本编排器,含 `references/` 方法论与模板)+ 6 子 skill `aigd-concept / system / iterate / handoff / sync / ui-capture`,**同级安装于本环境的 skills 目录**(随宿主 agent,如 Claude Code 的 `.claude/skills/`)。子 skill 正文用 `../aigd/references/` 取方法论 → `aigd/` 必须同级存在(`aigd-ui-capture` 走 `../aigd/references/ui-dsl-spec.md` 与 `scripts/`,同理)。**单一真源、勿单拷**;将来要独立分发再升级为 plugin(详见 `references/README.md`「打包与可移植」)。
+## Package structure (install the whole package, don't split it)
+`aigd` (this orchestrator, containing the `references/` methodology and templates) + 6 sub-skills `aigd-concept / system / iterate / handoff / sync / ui-capture`, **installed at the same level in this environment's skills directory** (following the host agent, e.g. Claude Code's `.claude/skills/`). Sub-skill bodies use `../aigd/references/` to fetch the methodology → `aigd/` must exist at the same level (`aigd-ui-capture` goes through `../aigd/references/ui-dsl-spec.md` and `scripts/`, likewise). **Single source of truth, don't copy individually**; if you later want to distribute it independently, upgrade it to a plugin (see `references/README.md` "Packaging & portability").
 
-## 项目环境建议
-- 脊柱文件(`项目档案` / `manifest`)与设计产物建议纳入 **Git/SVN** 管理;编排器每次操作前宜瞄一眼版本状态。
-- **CHANGELOG(改动账本)与版本控制互补**:VCS 记「改了什么」,CHANGELOG 记「为什么 + 哪个模型」(本方法论是 AI 辅助流程,记模型便于回溯某次改动出处)。
+## Project environment recommendations
+- Spine files (`project charter` / `manifest`) and design artifacts are recommended to be put under **Git/SVN** management; the orchestrator should glance at the version status before each operation.
+- **CHANGELOG (change ledger) complements version control**: VCS records "what changed", CHANGELOG records "why + which model" (this methodology is an AI-assisted flow, recording the model helps trace where a given change came from).
 
-## 边界
-- 做到"**AI 可直接开发的交接包**"为止(平台无关:规则 / 契约 / 配置 / 验收 / 原型 / 资源需求)。
-- 技术栈选择与客户端/服务端实现 = **下游**,不在本包。
+## Boundary
+- Goes as far as "**a handoff package an AI can develop directly from**" (platform-agnostic: rules / contract / config / acceptance / prototype / resource needs).
+- Tech-stack choice and client/server implementation = **downstream**, not in this package.

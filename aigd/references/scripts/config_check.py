@@ -1,28 +1,28 @@
 # -*- coding: utf-8 -*-
-"""工具4 · config_check —— config-spec.md ↔ xlsx schema 漂移校验器(纯 stdlib)。
+"""Tool 4 - config_check -- config-spec.md <-> xlsx schema drift validator (pure stdlib).
 
-为什么存在:方法论把「值」放 xlsx、「schema/规则」放文档(config-spec.md 按字段名引用 xlsx)。
-改值不用动文档 —— 但改**结构**(加列 / 改字段域 / 改 sheet 名)是改了文档拥有的 schema,
-却改在了 xlsx 里,两边静默失同步。config-spec.md 末尾的「校验清单」写了对的检查,但它是
-未勾的框、被自评 ✅。本脚本把那张清单的 schema 部分变成确定性机检。
+Why it exists: the methodology puts "values" in xlsx and "schema/rules" in docs (config-spec.md references xlsx by field name).
+Changing values needs no doc edit -- but changing the **structure** (adding a column / changing a field domain / renaming a sheet) changes the schema the doc owns,
+yet does it in the xlsx, so the two silently go out of sync. The "validation checklist" at the end of config-spec.md writes the right checks, but it is an
+unchecked box, rubber-stamped with a self-assessed checkmark. This script turns the schema part of that checklist into a deterministic machine check.
 
-抓什么(高置信):
-  UNDOC_COL    xlsx 有列、配置说明没记 —— 后改 xlsx 未回写文档的典型痕迹
-  MISSING_COL  配置说明声明字段、xlsx 无此列
-  TYPE         同名字段 文档类型 ≠ xlsx 类型
-  RENAME       文档表名找不到同名 sheet,最接近的疑似改名
-  MISSING_TABLE 文档声明表、xlsx 无 sheet
-抓什么(advisory,需人判):
-  DOMAIN       字段声明域(0/1、1~5 这类可解析的)与实际数据不符;给越界样例,human 判真伪
+What it catches (high confidence):
+  UNDOC_COL     xlsx has a column the config-spec does not record -- the typical trace of editing xlsx later without writing back to the doc
+  MISSING_COL   config-spec declares a field, xlsx has no such column
+  TYPE          same-named field, doc type != xlsx type
+  RENAME        the doc table name has no same-named sheet; the closest one is a suspected rename
+  MISSING_TABLE the doc declares a table, xlsx has no sheet
+What it catches (advisory, needs human judgment):
+  DOMAIN        the field's declared domain (parseable ones like 0/1, 1~5) does not match actual data; gives an out-of-range sample, human judges true/false
 
-不抓(留给 value-integrity 工具,另做):跨表外键解析 / 验收用例字面值对账 / *Percentage 单调。
+What it does not catch (left to the value-integrity tool, done separately): cross-table foreign-key resolution / acceptance-case literal-value reconciliation / *Percentage monotonicity.
 
-xlsx 读取复用 xlsx_dump(zipfile+ElementTree,绕开 openpyxl 对国产导表 xlsx 的样式报错)。
-无项目硬编码,路径全走 argv。
+xlsx reading reuses xlsx_dump (zipfile+ElementTree, bypassing openpyxl's style errors on domestic table-export xlsx).
+No project hard-coding, all paths come from argv.
 
-用法:
+Usage:
   python config_check.py <config-spec.md> <config.xlsx>
-  退出码: 有 major/MISSING_TABLE → 1,否则 0(advisory/info 不致失败)。
+  Exit code: any major/MISSING_TABLE -> 1, otherwise 0 (advisory/info do not cause failure).
 """
 import sys, os, re, zipfile
 
@@ -30,10 +30,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import xlsx_dump as X
 
 
-# ---------------------------------------------------------------- 域解析
+# ---------------------------------------------------------------- domain parsing
 def parse_domain(s):
-    """把声明域解析成 ('enum', {..}) / ('range', lo, hi) / None。
-    严格锚定:只认纯整数斜杠枚举与 a~b 范围;带文字/省略/口径一律 None(避免误报)。"""
+    """Parse a declared domain into ('enum', {..}) / ('range', lo, hi) / None.
+    Strictly anchored: only recognizes pure-integer slash enums and a~b ranges; anything with text/ellipsis/spec is None (to avoid false positives)."""
     s = (s or "").strip()
     if not s:
         return None
@@ -54,15 +54,15 @@ def _domain_violations(dom, vals):
     return []
 
 
-# ---------------------------------------------------------------- xlsx 解析
+# ---------------------------------------------------------------- xlsx parsing
 def _cell(row, i):
     return row[i] if i < len(row) else ""
 
 
 def parse_xlsx_sheet(rows):
-    """rows: 行列表(字符串)。自描述表头:行1=表名 行2=类型 行3=字段key(数组 field[…]) 行4=中文 行5+=数据。
-    返回 {table, fields:{name:{type,is_array,vals}}}。数组列归一为单逻辑字段;空(合并)列跳过;
-    标量字段采集去重 int 数据域(string 列 → vals=[])。"""
+    """rows: list of rows (strings). Self-describing header: row1=table name, row2=type, row3=field key (array field[...]), row4=Chinese, row5+=data.
+    Returns {table, fields:{name:{type,is_array,vals}}}. Array columns collapse into one logical field; empty (merged) columns are skipped;
+    scalar fields collect a deduplicated int data domain (string columns -> vals=[])."""
     type_row = rows[1] if len(rows) > 1 else []
     field_row = rows[2] if len(rows) > 2 else []
     data_rows = rows[4:] if len(rows) > 4 else []
@@ -81,11 +81,11 @@ def parse_xlsx_sheet(rows):
         raw = _cell(field_row, i)
         nm = str(raw).strip() if raw is not None else ""
         if in_array:
-            if "]" in nm:          # 闭合:简单数组 `]` 或对象数组 `max}]`
+            if "]" in nm:          # close: simple array `]` or object array `max}]`
                 in_array, cur = False, None
             continue
         if not nm:
-            continue                       # 合并/空列
+            continue                       # merged/empty column
         t = str(_cell(type_row, i) or "").strip().replace("[]", "")
         if "[" in nm:
             base = nm.split("[")[0].strip()
@@ -110,7 +110,7 @@ def parse_xlsx_sheet(rows):
                 seen.add(int(float(str(v).strip())))
             except ValueError:
                 ok = False
-                break                       # 非 int(string 列)→ 不做域检
+                break                       # non-int (string column) -> no domain check
             if len(seen) > CAP:
                 break
         f["vals"] = sorted(seen) if ok else []
@@ -132,10 +132,10 @@ def read_xlsx(path):
     return out
 
 
-# ---------------------------------------------------------------- config-spec.md 解析
+# ---------------------------------------------------------------- config-spec.md parsing
 def parse_config_md(text):
-    """带 backtick 表名的 `## 段` + 其后字段表 → {code:{fields:{name:{type,value,range,ref,is_array}}}}。
-    字段表列按表头名(字段/类型/取值/范围/引用)定位,容忍列序与缺列;数组字段名归一。"""
+    """A backtick table name `## section` + its following field table -> {code:{fields:{name:{type,value,range,ref,is_array}}}}.
+    Field-table columns are located by header name (Field/Type/Values/Range/Ref), tolerant of column order and missing columns; array field names are collapsed."""
     tables = {}
     lines = text.splitlines()
     code = None
@@ -147,13 +147,13 @@ def parse_config_md(text):
             code = m.group(1).strip() if m else None
             i += 1
             continue
-        if code and st.startswith("|") and "字段" in st:
+        if code and st.startswith("|") and "Field" in st:
             header = [c.strip() for c in st.strip("|").split("|")]
             idx = {}
-            for key in ("字段", "类型", "取值", "范围", "引用"):
+            for key in ("Field", "Type", "Values", "Range", "Ref"):
                 idx[key] = next((j for j, h in enumerate(header) if key in h), None)
             i += 1
-            if i < n and set(lines[i].strip()) <= set("|-: "):   # 分隔行
+            if i < n and set(lines[i].strip()) <= set("|-: "):   # separator row
                 i += 1
             fields = {}
             while i < n and lines[i].strip().startswith("|"):
@@ -163,13 +163,13 @@ def parse_config_md(text):
                     j = idx[key]
                     return _cells[j] if (j is not None and j < len(_cells)) else "—"
 
-                raw = cg("字段")
+                raw = cg("Field")
                 base = raw.split("[")[0].strip()
-                if base and base != "字段":
-                    typ = cg("类型")
+                if base and base != "Field":
+                    typ = cg("Type")
                     fields[base] = {"type": typ.replace("[]", "").strip(),
-                                    "value": cg("取值"), "range": cg("范围"),
-                                    "ref": cg("引用"),
+                                    "value": cg("Values"), "range": cg("Range"),
+                                    "ref": cg("Ref"),
                                     "is_array": ("[" in raw or typ.strip().endswith("[]"))}
                 i += 1
             if fields:
@@ -193,10 +193,10 @@ def diff(doc, xlsx):
             if len(cands) == 1:
                 xname = cands[0]
                 findings.append({"sev": "major", "kind": "RENAME", "table": code, "field": None,
-                                 "msg": "文档表名 '%s' 无同名 sheet;最接近 '%s'(疑改名,需同步)" % (code, xname)})
+                                 "msg": "doc table name '%s' has no same-named sheet; closest is '%s' (suspected rename, needs sync)" % (code, xname)})
         if xname is None:
             findings.append({"sev": "major", "kind": "MISSING_TABLE", "table": code, "field": None,
-                             "msg": "文档声明表 '%s',xlsx 无对应 sheet" % code})
+                             "msg": "doc declares table '%s', xlsx has no matching sheet" % code})
             continue
         used.add(xname)
         xfields = xlsx[xname]["fields"]
@@ -204,19 +204,19 @@ def diff(doc, xlsx):
         for fn in sorted(dfields):
             if fn not in xfields:
                 findings.append({"sev": "major", "kind": "MISSING_COL", "table": code, "field": fn,
-                                 "msg": "文档声明字段 '%s.%s',xlsx 无此列" % (code, fn)})
+                                 "msg": "doc declares field '%s.%s', xlsx has no such column" % (code, fn)})
         for fn in sorted(xfields):
             if fn not in dfields:
                 findings.append({"sev": "major", "kind": "UNDOC_COL", "table": code, "field": fn,
-                                 "msg": "xlsx '%s' 有列 '%s',配置说明未记录(疑后改 xlsx 未回写文档)" % (xname, fn)})
+                                 "msg": "xlsx '%s' has column '%s', not recorded in config-spec (suspected xlsx edited later without writing back to doc)" % (xname, fn)})
         for fn in sorted(dfields):
             if fn not in xfields:
                 continue
             dt, xt = dfields[fn]["type"], xfields[fn]["type"]
-            # 数组/对象数组(混合子类型)无单一标量类型可比,跳过 TYPE 检查
+            # array/object array (mixed subtypes) has no single scalar type to compare, skip the TYPE check
             if not (dfields[fn].get("is_array") or xfields[fn].get("is_array")) and dt and xt and dt != xt:
                 findings.append({"sev": "major", "kind": "TYPE", "table": code, "field": fn,
-                                 "msg": "字段 '%s.%s' 类型不一致: 文档=%s xlsx=%s" % (code, fn, dt, xt)})
+                                 "msg": "field '%s.%s' type mismatch: doc=%s xlsx=%s" % (code, fn, dt, xt)})
             if not xfields[fn]["is_array"]:
                 dv, dr = dfields[fn].get("value", ""), dfields[fn].get("range", "")
                 dom = parse_domain(dv) or parse_domain(dr)
@@ -225,15 +225,15 @@ def diff(doc, xlsx):
                     bad = _domain_violations(dom, vals)
                     if bad:
                         decl = dv if parse_domain(dv) else dr
-                        more = " …共%d个" % len(bad) if len(bad) > 5 else ""
+                        more = " ...%d in total" % len(bad) if len(bad) > 5 else ""
                         findings.append({"sev": "advisory", "kind": "DOMAIN", "table": code, "field": fn,
-                                         "msg": "字段 '%s.%s' 声明域 '%s',实际越界样例: %s%s" % (
+                                         "msg": "field '%s.%s' declared domain '%s', actual out-of-range samples: %s%s" % (
                                              code, fn, decl, ",".join(str(b) for b in bad[:5]), more)})
 
     for t in sorted(xlsx):
         if t not in used:
             findings.append({"sev": "info", "kind": "UNDOC_TABLE", "table": t, "field": None,
-                             "msg": "xlsx sheet '%s' 在配置说明中无对应表段" % t})
+                             "msg": "xlsx sheet '%s' has no matching table section in config-spec" % t})
     return findings
 
 
@@ -248,27 +248,27 @@ _SEV_ORDER = {"major": 0, "advisory": 1, "info": 2}
 
 
 def format_report(findings, md_path, xlsx_path):
-    out = ["配置说明 ↔ xlsx schema 漂移校验",
-           "  配置说明: %s" % md_path,
-           "  xlsx    : %s" % xlsx_path, ""]
+    out = ["config-spec <-> xlsx schema drift validation",
+           "  config-spec: %s" % md_path,
+           "  xlsx       : %s" % xlsx_path, ""]
     if not findings:
-        out.append("✓ 无漂移:列 / 类型 / 表名一致,可解析域无越界。")
+        out.append("OK no drift: columns / types / table names consistent, parseable domains have no out-of-range values.")
         return "\n".join(out)
     by_tbl = {}
     for f in findings:
-        by_tbl.setdefault(f["table"] or "(其他)", []).append(f)
+        by_tbl.setdefault(f["table"] or "(other)", []).append(f)
     n_major = sum(1 for f in findings if f["sev"] == "major")
     n_adv = sum(1 for f in findings if f["sev"] == "advisory")
     n_info = sum(1 for f in findings if f["sev"] == "info")
-    out.append("发现 %d 条(major=%d advisory=%d info=%d):" % (len(findings), n_major, n_adv, n_info))
+    out.append("found %d (major=%d advisory=%d info=%d):" % (len(findings), n_major, n_adv, n_info))
     out.append("")
     tag = {"major": "[major]", "advisory": "[advisory]", "info": "[info]"}
     for tbl in sorted(by_tbl):
-        out.append("● %s" % tbl)
+        out.append("* %s" % tbl)
         for f in sorted(by_tbl[tbl], key=lambda x: (_SEV_ORDER[x["sev"]], x["kind"], x["field"] or "")):
             out.append("    %-10s %-13s %s" % (tag[f["sev"]], f["kind"], f["msg"]))
         out.append("")
-    out.append("major 须回写文档/改 xlsx 后重跑;advisory 请人工判定声明域是否只是简写。")
+    out.append("major must be fixed by writing back to doc / editing xlsx, then re-run; advisory needs human judgment on whether the declared domain is just shorthand.")
     return "\n".join(out)
 
 

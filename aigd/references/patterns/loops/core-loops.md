@@ -1,71 +1,71 @@
-# 玩法范式 · 常见核心循环(5 种模板)
+# Gameplay paradigm · common core loops (5 templates)
 
-> **用途**:`aigd-concept` 立意访谈时的弹药。方法论只给"流程",AI 当访谈引导者要能**砍弱方向、提对口径**——核心循环是第一刀:一个游戏的"做什么—为什么继续"压缩成一句循环,循环不闭就别往下设计。
-> **怎么用**:跟用户对齐到一种(或主+辅两种)循环 → 按该循环的"驱动变量/反馈/失速点"逐项追问 → 落成系统清单。**别同时塞 3 种循环**,新项目先把一条主循环跑闭。
-
----
-
-## 通用三段式
-
-任何核心循环都是 **投入 → 转化 → 回吐** 的闭环:玩家投入(时间/资源/操作)→ 系统转化(成长/进度/产出)→ 回吐(更强能力/新内容/新资源)喂回下一轮投入。**闭环成立的判据**:回吐物能**降低或加速**下一轮投入,且**始终有下一个够得着的目标**。断在哪一环 = 那一环就是失速点。
+> **Purpose**: ammunition for `aigd-concept`'s concept interview. The methodology only gives "process"; as an interview guide, the AI must be able to **cut weak directions and propose the right conventions** — the core loop is the first cut: a game's "what to do — why keep going" compressed into one loop sentence; if the loop doesn't close, don't design further.
+> **How to use**: align with the user on one loop (or a primary + secondary pair) → drill into that loop's "driving variable / feedback / stall point" item by item → land it as a system list. **Don't stuff in 3 loops at once**; for a new project, first run one primary loop closed.
 
 ---
 
-## 模板 1:收集 → 养成 → 验证
+## Universal three-stage form
 
-```text
-收集(抽卡/掉落/合成获得单位) → 养成(数值轴推高战力) → 验证(关卡/Boss/竞技消费战力) → 掉材料/解锁 → 回收集
-```
-- **驱动变量**:战力(power)。养成抬战力,验证设战力门槛。
-- **反馈**:过关 → 掉养成材料 + 解锁更高关 → 更高战力需求。
-- **常见失速点**:养成产出与验证门槛**坡度不匹配**——材料给太快(无脑碾压、内容消耗过快)或太慢(卡墙、弃游)。
-- **要问**:战力公式?养成轴几条(见 [`battle-unit-progression.md`](battle-unit-progression.md))?关卡战力推荐值怎么定?卡点处给什么短期目标?
-
-## 模板 2:探索 → 获取 → 建造
-
-```text
-探索(开图/解锁区域) → 获取(采集/拾取资源) → 建造(基地/科技/产能) → 解锁更远探索 → 回探索
-```
-- **驱动变量**:产能 + 探索半径。
-- **反馈**:建造提升产能与解锁,产能支撑更远探索。
-- **常见失速点**:产能**指数膨胀**(后期资源溢出无意义,见陷阱页 §1);或建造前置链太长,新内容迟迟够不着。
-- **要问**:资源种类与转化链?产能是线性还是指数?探索解锁靠资源还是靠进度?有没有产能上限/仓储压力做节流?
-
-## 模板 3:匹配 → 对抗 → 结算(PVP)
-
-```text
-匹配(分段/MMR配对) → 对抗(实时/回合对局) → 结算(段位升降+奖励) → 调整阵容/养成 → 回匹配
-```
-- **驱动变量**:段位/分数 + 阵容强度。
-- **反馈**:赢则升段+奖励,输则掉分,驱动调整。
-- **常见失速点**:匹配公平性(碾压局劝退);**付费战力**直接换胜率(pay-to-win 失衡);段位奖励坡度让顶/底段躺平。
-- **要问**:胜负由操作还是数值主导?匹配维度(战力/段位/活跃)?赛季重置与保护机制?养成对胜率的影响上限?
-
-## 模板 4:抽卡 → 组队 → 推图
-
-```text
-抽卡(获取角色/卡) → 组队(编队/羁绊/Build) → 推图(主线/活动关) → 资源回流抽卡养成 → 回抽卡
-```
-- **驱动变量**:角色池广度 + Build 强度。
-- **反馈**:推图给抽卡券与养成料,新角色开新 Build。
-- **常见失速点**:**保底方差**(非酋体验崩,见陷阱页 §8);羁绊/Build 维度太少导致"只有一套最优解"、收集无意义。
-- **要问**:抽卡保底机制?角色间是否正交(都有用武之地)?编队约束(位置/羁绊/元素克制)?推图资源是否够养新角色?
-
-## 模板 5:耕作 → 收获 → 交易(经济/模拟)
-
-```text
-耕作(种植/生产/挂机) → 收获(产出物品) → 交易(卖出/加工/满足订单) → 再投入扩产 → 回耕作
-```
-- **驱动变量**:产出效率 + 货币流通。
-- **反馈**:交易得货币 → 扩产/解锁高价值产物。
-- **常见失速点**:**通货膨胀**(货币产出 > 回收,物价崩);生产链过深让新手迷失;挂机产出让在线操作失去意义。
-- **要问**:货币的产出口与回收口分别是什么(必须有回收)?生产链深度?挂机与主动操作的收益比?有没有市场调节(税/损耗)?
+Any core loop is the closed loop of **invest → convert → yield back**: the player invests (time/resources/operations) → the system converts (growth/progress/output) → the yield-back (stronger ability/new content/new resources) feeds back into the next round of investment. **The criterion for the loop closing**: the yield-back can **lower or speed up** the next round of investment, and **there is always a next reachable goal**. Wherever it breaks = that link is the stall point.
 
 ---
 
-## 访谈落地:从循环到系统清单
+## Template 1: collect → progress → validate
 
-选定循环后,把每一环映射成**至少一个系统**,把环间的"回吐物"标成**跨系统引用**:
-- 例(模板1):收集=抽卡/掉落系统、养成=单位养成系统、验证=关卡/战斗系统;"关卡掉养成料"= 关卡系统**反向提供**给养成系统的 `item.id`(广播型,登记到 manifest F 表)。
-- 每个失速点 → 一条 `[待确认]` 口径(坡度/上限/保底),交用户拍板,别替拍数值。
-- 多循环项目:先建主循环全套系统,辅循环标 `[待设计]`,等主循环试玩跑通再立项(见 manifest A 表依赖)。
+```text
+collect (gacha/drop/synthesis to obtain units) → progress (push power up via numeric axes) → validate (stages/Boss/arena consume power) → drop materials/unlock → back to collect
+```
+- **Driving variable**: power. Progression raises power, validation sets power thresholds.
+- **Feedback**: clear a stage → drop progression materials + unlock a higher stage → higher power requirement.
+- **Common stall point**: the **gradient mismatch** between progression output and validation thresholds — materials given too fast (mindless steamrolling, content consumed too fast) or too slow (wall-stuck, quitting).
+- **Ask**: power formula? How many progression axes (see [`battle-unit-progression.md`](battle-unit-progression.md))? How is a stage's recommended power set? What short-term goal is given at a stuck point?
+
+## Template 2: explore → acquire → build
+
+```text
+explore (open the map/unlock a region) → acquire (gather/pick up resources) → build (base/tech/production) → unlock farther exploration → back to explore
+```
+- **Driving variable**: production capacity + exploration radius.
+- **Feedback**: building raises production and unlocks; production supports farther exploration.
+- **Common stall point**: production **exponential inflation** (late-game resources overflow into meaninglessness, see trap page §1); or the build prerequisite chain is too long, with new content long out of reach.
+- **Ask**: resource types and conversion chains? Is production linear or exponential? Does exploration-unlock rely on resources or on progress? Is there a production cap / storage pressure as a throttle?
+
+## Template 3: match → compete → settle (PVP)
+
+```text
+match (tier/MMR pairing) → compete (real-time/turn-based match) → settle (rank up/down + rewards) → adjust roster/progress → back to match
+```
+- **Driving variable**: rank/score + roster strength.
+- **Feedback**: a win raises rank + rewards, a loss drops points, driving adjustment.
+- **Common stall point**: matchmaking fairness (steamroll matches drive people away); **paid power** directly buys win rate (pay-to-win imbalance); the rank-reward gradient lets the top/bottom tiers lie flat.
+- **Ask**: is win/loss driven by operations or by numbers? Match dimensions (power/rank/activity)? Season reset and protection mechanisms? The upper bound of progression's effect on win rate?
+
+## Template 4: gacha → team-up → push stages
+
+```text
+gacha (obtain characters/cards) → team-up (formation/bonds/Build) → push stages (main story/event stages) → resource backflow to gacha and progression → back to gacha
+```
+- **Driving variable**: character-pool breadth + Build strength.
+- **Feedback**: pushing stages gives gacha tickets and progression materials; new characters open new Builds.
+- **Common stall point**: **pity variance** (the unlucky-player experience collapses, see trap page §8); too few bond/Build dimensions causing "only one optimal answer" and making collection meaningless.
+- **Ask**: gacha pity mechanism? Are characters orthogonal (each has a place to shine)? Formation constraints (position/bond/element counter)? Are stage-push resources enough to raise new characters?
+
+## Template 5: farm → harvest → trade (economy/simulation)
+
+```text
+farm (plant/produce/idle) → harvest (output items) → trade (sell/process/fulfill orders) → reinvest to expand production → back to farm
+```
+- **Driving variable**: output efficiency + currency circulation.
+- **Feedback**: trading earns currency → expand production / unlock high-value output.
+- **Common stall point**: **inflation** (currency output > recovery, prices collapse); a too-deep production chain loses newbies; idle output makes online operation meaningless.
+- **Ask**: what are the currency's output faucet and recovery sink respectively (there must be a sink)? Production-chain depth? The yield ratio of idle vs active operation? Is there market regulation (tax/loss)?
+
+---
+
+## Interview landing: from loop to system list
+
+Once a loop is chosen, map each link to **at least one system**, and mark the inter-link "yield-back" as a **cross-system reference**:
+- E.g. (Template 1): collect = gacha/drop system, progress = unit-progression system, validate = stage/battle system; "stages drop progression materials" = the `item.id` the stage system **reverse-provides** to the progression system (broadcast-type, registered in the manifest F table).
+- Each stall point → a `[to-confirm]` convention (gradient/cap/pity), for the user to decide, don't decide numbers on their behalf.
+- Multi-loop project: build the full set of systems for the primary loop first, mark secondary loops `[to-design]`, and only greenlight them once the primary loop's playtest runs through (see the manifest A-table dependencies).

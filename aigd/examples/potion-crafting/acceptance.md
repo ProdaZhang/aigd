@@ -1,38 +1,38 @@
-# 药水合成系统 — 验收用例（Gherkin，玩具样例）
+# Potion-Crafting System — Acceptance Cases (Gherkin, toy example)
 
-> 每条挂 `R-POT-*`;断言用 `表[主键].字段` 引配置真值,`value_check` 会逐条解析(行缺=悬空,字段空≠悬空)。
+> Each carries an `R-POT-*`; assertions reference config truth via `<table>[<key>].<field>`, which `value_check` parses one by one (missing row = dangling, empty field ≠ dangling).
 
-## 合成
+## Crafting
 
 ```gherkin
-场景: 材料齐则合成成功 (R-POT-CRAFT-01)
-  假设 背包含药水 recipe[1].material[] 的全部材料各 1 个
-  当 按配方 recipe[1] 合成
-  那么 扣除材料、产出 recipe[1].output 药水 ×1
+Scenario: Materials complete → crafting succeeds (R-POT-CRAFT-01)
+  Given the inventory contains 1 each of all materials in recipe[1].material[]
+  When crafting by recipe recipe[1]
+  Then consume the materials and produce recipe[1].output potion ×1
 
-场景: 材料不足则拒绝 (R-POT-CRAFT-01)
-  假设 背包缺 recipe[2].material[] 中至少一种
-  当 按配方 recipe[2] 合成
-  那么 返回 ERR_MATERIAL_LACK 且背包不变
+Scenario: Insufficient materials → reject (R-POT-CRAFT-01)
+  Given the inventory is missing at least one of recipe[2].material[]
+  When crafting by recipe recipe[2]
+  Then return ERR_MATERIAL_LACK and the inventory is unchanged
 ```
 
-## 使用
+## Use
 
 ```gherkin
-场景: 回血 = 基础 + 等级累计 (R-POT-USE-01)
-  假设 玩家等级对应 potionLv[3]
-  当 使用药水 potion[103]
-  那么 回血量 = potion[103].heal + potionLv[3].heal
+Scenario: Heal = base + cumulative level bonus (R-POT-USE-01)
+  Given the player's level corresponds to potionLv[3]
+  When using potion potion[103]
+  Then heal amount = potion[103].heal + potionLv[3].heal
 
-场景: 等级加成取累计值不逐级累加 (R-POT-USE-02)
-  当 玩家处于等级 5
-  那么 等级回血加成 = potionLv[5].heal（直接取该行,非 1..5 求和）
+Scenario: Level bonus takes the cumulative value, not level-by-level accumulation (R-POT-USE-02)
+  When the player is at level 5
+  Then the level heal bonus = potionLv[5].heal (read that row directly, not the sum of 1..5)
 ```
 
-## 叠加
+## Stacking
 
 ```gherkin
-场景: 叠加按品质封顶 (R-POT-STACK-01)
-  当 背包叠放药水 potion[104]
-  那么 叠加上限 = potionRarity[potion[104].rarity 即 3].maxStack
+Scenario: Stacking is capped by rarity (R-POT-STACK-01)
+  When stacking potion potion[104] in the inventory
+  Then the stack cap = potionRarity[potion[104].rarity i.e. 3].maxStack
 ```

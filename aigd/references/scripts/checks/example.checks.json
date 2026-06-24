@@ -1,10 +1,10 @@
 {
-  "_about": "value_check 领域规则·示意样例(表名/字段名均为占位,非任何具体项目)。规则类型/字段见 value_check.py 顶部说明;实际项目按本结构在配置目录建 <系统>.checks.json。",
+  "_about": "value_check domain rules · illustrative sample (table/field names are all placeholders, not any specific project). Rule types/fields see the spec at the top of value_check.py; for a real project, create <system>.checks.json in the config directory following this structure.",
   "rules": [
     {
       "type": "cardinality",
       "severity": "advisory",
-      "desc": "示意:进化链成员数-1 vs 该品质可进化次数。若运行时恒以品质封顶、链超出=有意补全(超出成员不可达),则仅 advisory 提示(非 major 阻断),供设计者核对是否真想留不可达成员",
+      "desc": "Illustrative: evolution-chain member count -1 vs that quality's evolvable count. If at runtime it's always capped by quality and the chain overflow = intentional fill-out (the excess members unreachable), then only an advisory hint (not a major block), for the designer to verify whether they really intend to leave unreachable members",
       "array_table": "evolveLine",
       "array_field": "unit",
       "member_table": "unit",
@@ -14,7 +14,7 @@
     },
     {
       "type": "coverage",
-      "desc": "示意:等级表 id 连续覆盖 1~200,无断档",
+      "desc": "Illustrative: the level table's id contiguously covers 1~200, with no gap",
       "table": "levelTable",
       "field": "id",
       "min": 1,
@@ -22,14 +22,14 @@
     },
     {
       "type": "monotonic",
-      "desc": "示意:升级三围加成随等级单调不减(累计值)",
+      "desc": "Illustrative: the level-up stats bonus is monotonically non-decreasing with level (cumulative value)",
       "table": "levelTable",
       "field": "HpPercentage",
       "order_field": "id"
     },
     {
       "type": "monotonic",
-      "desc": "示意:升星三围加成随星级单调不减(同品质+同元素分组)",
+      "desc": "Illustrative: the star-up stats bonus is monotonically non-decreasing with star (grouped by same quality + same element)",
       "table": "starTable",
       "field": "HpPercentage",
       "order_field": "star",

@@ -1,11 +1,12 @@
-"""工具3 家族 · 确定性采色器:原图 + 界面 DSL → 每元素主色(fill)+ 文字色(ink) skin 模块。
+"""Tool 3 family · deterministic color sampler: source image + interface DSL -> per-element main color (fill) + text color (ink) skin module.
 
-按 DSL 的 bbox 从原图采样真实颜色(主色=区域主导色,文字色=区域内与主色对比最大的色),
-背景槽/立绘槽(美术,要换素材)与无 id 元素不采。需 Pillow;同输入 + 同 Pillow 版本 → 输出一致。
+Samples real colors from the source image by each DSL bbox (main color = the region's dominant color, text color = the color in the
+region with the greatest contrast to the main color); background/portrait slots (art, to be swapped) and elements without id are not sampled.
+Requires Pillow; same input + same Pillow version -> consistent output.
 
-用法: python ui_palette.py <dsl.md> <image> [out.skin.json]
-产物: {元素id: {"fill":"#rrggbb", "ink":"#rrggbb"}} —— 喂 ui_render.py --skin 逐元素上色。
-      或 --merge 把色写成 md 的 `## 皮肤` 段(渲染该 md 即用真色,无需 --skin)。
+Usage: python ui_palette.py <dsl.md> <image> [out.skin.json]
+Output: {element id: {"fill":"#rrggbb", "ink":"#rrggbb"}} -- feeds ui_render.py --skin to color each element.
+        Or --merge to write the colors into the md's `## Skin` section (rendering that md then uses the real colors, no --skin needed).
 """
 import sys, json, os
 
@@ -14,7 +15,7 @@ try:
 except ImportError:
     R = None
 
-ART = ("背景槽", "立绘槽")
+ART = ("bgSlot", "artSlot")
 
 
 def _hex(c):
@@ -29,7 +30,7 @@ def _dominant(region, k=6):
     rgb = region.convert("RGB")
     q = rgb.quantize(colors=k).convert("RGB")
     cols = q.getcolors(q.width * q.height) or []
-    cols.sort(key=lambda c: c[0], reverse=True)   # 频次降序
+    cols.sort(key=lambda c: c[0], reverse=True)   # descending by frequency
     return [c[1] for c in cols]
 
 
@@ -46,8 +47,8 @@ def sample(image_path, parsed):
         box = (max(0, int(x1)), max(0, int(y1)), min(W, int(round(x2))), min(H, int(round(y2))))
         if box[2] <= box[0] or box[3] <= box[1]:
             continue
-        # 圆形元素:取中心内圈采样(否则方框里圆外的背景会主导,采错色)
-        if (e.get("shape") or "") in ("圆", "圆形", "circle"):
+        # circular element: sample the central inner ring (otherwise the background inside the box but outside the circle dominates and samples the wrong color)
+        if (e.get("shape") or "") in ("circle",):
             cx, cy = (box[0] + box[2]) / 2.0, (box[1] + box[3]) / 2.0
             hw, hh = (box[2] - box[0]) * 0.28, (box[3] - box[1]) * 0.28
             inner = (int(cx - hw), int(cy - hh), int(cx + hw), int(cy + hh))
@@ -63,24 +64,24 @@ def sample(image_path, parsed):
 
 
 def merge(md_text, skin):
-    """把采样色写成 md 的 `## 皮肤` 段(id → 色):替换已有皮肤段,或追加到文末。
+    """Write the sampled colors into the md's `## Skin` section (id -> color): replace an existing Skin section, or append at the end.
 
-    皮肤与结构(Layout)分离 —— 整段可换肤/可删(删=回退 L1),不污染元素行。
-    skin 为有序 dict(sample 按元素顺序产出)→ 输出确定。
+    Skin and structure (Layout) are separated -- the whole section can be re-skinned/deleted (delete = fall back to L1), without polluting element lines.
+    skin is an ordered dict (sample produces it in element order) -> deterministic output.
     """
     lines = md_text.splitlines()
     out, i, n = [], 0, len(lines)
     while i < n:
         ln = lines[i]
-        if ln.strip().startswith("## ") and ln.strip()[3:].strip().startswith("皮肤"):
-            i += 1                                   # 跳过旧皮肤段(到下一个 ## 或文末)
+        if ln.strip().startswith("## ") and ln.strip()[3:].strip().startswith("Skin"):
+            i += 1                                   # skip the old Skin section (until the next ## or end of file)
             while i < n and not lines[i].strip().startswith("## "):
                 i += 1
             continue
         out.append(ln); i += 1
-    while out and not out[-1].strip():               # 去尾部空行再追加
+    while out and not out[-1].strip():               # strip trailing blank lines before appending
         out.pop()
-    block = ["", "## 皮肤", ""]
+    block = ["", "## Skin", ""]
     for key in skin:
         c = skin[key]
         row = "%s  %s" % (key, c["fill"])
@@ -101,32 +102,32 @@ def main(argv=None):
         else:
             del argv[i]
     if len(argv) < 2:
-        print("用法: python ui_palette.py <dsl.md> <image> [out.skin.json]")
-        print("      python ui_palette.py <dsl.md> <image> --merge [out.md]   # 把色写成 md 的 ## 皮肤 段")
+        print("usage: python ui_palette.py <dsl.md> <image> [out.skin.json]")
+        print("       python ui_palette.py <dsl.md> <image> --merge [out.md]   # write the colors into the md's ## Skin section")
         return 2
     if R is None:
-        print("✗ 需要同目录 ui_render.py(复用 parse_dsl)")
+        print("X requires same-directory ui_render.py (reuses parse_dsl)")
         return 2
     dsl, image = argv[0], argv[1]
     with open(dsl, encoding="utf-8") as f:
         md = f.read()
     parsed = R.parse_dsl(md)
-    # 不 resolve:采色/--merge 按 authored md 的 id 写回,展开后命名空间 id 会写错。
-    # 竞品捕获(本工具唯一场景)本就不含实例,resolve 是恒等;故略过。
+    # do not resolve: sampling/--merge writes back by the authored md's ids; after expansion, namespaced ids would be written wrong.
+    # competitor capture (this tool's only scenario) contains no instances anyway, so resolve is the identity; hence skipped.
     from PIL import Image as _I
     iw, ih = _I.open(image).size
-    print("建议 > 尺寸:", "%dx%d" % R.recommend_size(iw, ih))
+    print("recommended > size:", "%dx%d" % R.recommend_size(iw, ih))
     skin = sample(image, parsed)
     if merge_mode:
         out = merge_out or (dsl.rsplit(".", 1)[0] + ".colored.md")
         with open(out, "w", encoding="utf-8") as f:
             f.write(merge(md, skin))
-        print("merged md ->", out, "(%d 元素上色)" % len(skin))
+        print("merged md ->", out, "(%d elements colored)" % len(skin))
     else:
         out = argv[2] if len(argv) > 2 else (dsl.rsplit(".", 1)[0] + ".skin.json")
         with open(out, "w", encoding="utf-8") as f:
             json.dump(skin, f, ensure_ascii=False, indent=1)
-        print("skin ->", out, "(%d 元素)" % len(skin))
+        print("skin ->", out, "(%d elements)" % len(skin))
     return 0
 
 

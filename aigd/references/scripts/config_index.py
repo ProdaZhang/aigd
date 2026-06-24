@@ -1,40 +1,41 @@
 # -*- coding: utf-8 -*-
-"""配置表索引 + `表[主键].字段` 解析(纯 stdlib,复用 xlsx_dump)。
+"""Config-table index + `Table[primary key].field` resolution (pure stdlib, reuses xlsx_dump).
 
-从 gherkin_to_checklist.py 抽出的共享层,供 gherkin_to_checklist(策划版清单代值)
-与 config_check / value_check(校验)共用,避免重复且不拖 openpyxl 进校验器。
+A shared layer extracted from gherkin_to_checklist.py, shared by gherkin_to_checklist
+(planner-version checklist value substitution) and config_check / value_check
+(validation), to avoid duplication and to keep openpyxl out of the validators.
 
-- build_index(dir): 扫目录所有 xlsx 所有 sheet → {表英文名: {file, fieldcol, data}}。
-- load_enums(枚举字典.md): {枚举名/中文: id},冲突名丢弃(防误代)。
-- load_keymap(复合键映射.json): {复合键表: [分量列名…]}。
-- lookup(idx, table, keystr, field): 真值 / 'MULTI'(多键枚举需手填) / None(查不到=断链)。
-  护栏:单主键数字直查 id/col0;复合键按 keymap 分量列匹配、枚举名经 enums 解;绝不臆造。
+- build_index(dir): scan all sheets of all xlsx in a directory -> {English table name: {file, fieldcol, data}}.
+- load_enums(enum-dictionary.md): {enum name/Chinese: id}; conflicting names dropped (to prevent wrong substitution).
+- load_keymap(composite-key-map.json): {composite-key table: [component column names...]}.
+- lookup(idx, table, keystr, field): real value / 'MULTI' (multi-key enum needs manual fill) / None (not found = broken link).
+  Guardrails: single numeric primary key looked up directly against id/col0; composite key matched by keymap component columns; enum names resolved via enums; never fabricated.
 """
 import os, re, json, zipfile
 
 import xlsx_dump
 
-REF_RE = re.compile(r"([A-Za-z]\w*)\[([^\]\[]+)\]\.([A-Za-z]\w*)")   # 表[主键].字段
+REF_RE = re.compile(r"([A-Za-z]\w*)\[([^\]\[]+)\]\.([A-Za-z]\w*)")   # Table[primary key].field
 
 
 def _array_spans(field_row):
-    """简单列表数组(`field[ … ]`)→ {base: [数据列下标]}。对象数组(`[{…}]`)跳过。"""
+    """Simple list array (`field[ ... ]`) -> {base: [data column indices]}. Object arrays (`[{...}]`) are skipped."""
     spans = {}
     base, cols = None, []
     for ci in range(len(field_row)):
         k = (field_row[ci] or "").strip() if field_row[ci] is not None else ""
         if base is not None:
-            if "]" in k and "{" not in k:          # 闭合标记列(无数据)
+            if "]" in k and "{" not in k:          # closing-marker column (no data)
                 spans[base] = cols; base, cols = None, []
                 continue
             if k == "":
                 cols.append(ci); continue
-            spans[base] = cols; base, cols = None, []   # 提前遇新字段 → 收尾(尾随数组)
+            spans[base] = cols; base, cols = None, []   # hit a new field early -> wrap up (trailing array)
         if "[" in k and "{" not in k:
             b = re.split(r"[\[.]", k)[0].strip()
             if b:
                 base, cols = b, [ci]
-                if "]" in k:                        # 自闭合
+                if "]" in k:                        # self-closing
                     spans[b] = cols; base, cols = None, []
     if base is not None:
         spans[base] = cols
@@ -42,8 +43,8 @@ def _array_spans(field_row):
 
 
 def build_index(config_dir):
-    """扫配置目录所有 xlsx 的所有 sheet,建 表英文名 → {file, fieldcol, arraycols, data}。
-    自描述表头:行1=表名,行3=字段key(数组 field[ 也按裸名注册),行5+=数据。"""
+    """Scan all sheets of all xlsx in the config directory, build English table name -> {file, fieldcol, arraycols, data}.
+    Self-describing header: row1=table name, row3=field key (array field[ also registered under its bare name), row5+=data."""
     idx = {}
     for fn in sorted(os.listdir(config_dir)):
         if not fn.lower().endswith(".xlsx") or fn.startswith("~$"):
@@ -66,7 +67,7 @@ def build_index(config_dir):
                         continue
                     if k not in fieldcol:
                         fieldcol[k] = ci
-                    base = re.split(r"[\[.]", k)[0]    # 数组/对象字段 member[ / jump.x → 裸名也注册
+                    base = re.split(r"[\[.]", k)[0]    # array/object field member[ / jump.x -> register the bare name too
                     if base and base not in fieldcol:
                         fieldcol[base] = ci
                 idx[table] = {"file": fn, "fieldcol": fieldcol,
@@ -78,7 +79,7 @@ def build_index(config_dir):
 
 
 def load_enums(path):
-    """解 枚举字典.md 的 markdown 表 → {枚举名/中文: id}。冲突名丢弃(防误代)。"""
+    """Parse the markdown table of enum-dictionary.md -> {enum name/Chinese: id}. Conflicting names dropped (to prevent wrong substitution)."""
     enums, ambig = {}, set()
     with open(path, encoding="utf-8") as f:
         for line in f:
@@ -103,7 +104,7 @@ def load_enums(path):
 def load_keymap(path):
     with open(path, encoding="utf-8") as f:
         d = json.load(f)
-    return {k: v for k, v in d.items() if not k.startswith("_")}   # 丢注释键
+    return {k: v for k, v in d.items() if not k.startswith("_")}   # drop comment keys
 
 
 def _cell(row, fc):
@@ -114,14 +115,14 @@ def _cell(row, fc):
 
 
 def _resolve_key(k, enums):
-    """key → 用于匹配列的 id 串(数字原样;枚举名→id;解不出 None)。"""
+    """key -> id string used to match the column (numbers as-is; enum name->id; None if unresolvable)."""
     if re.fullmatch(r"-?\d+", k):
         return k
     return enums.get(k)
 
 
 def _find_row(idx, table, keystr):
-    """按主键命中一行 → row / 'MULTI'(多键枚举需手填) / None(无此行)。复合键按分量列匹配。"""
+    """Match a row by primary key -> row / 'MULTI' (multi-key enum needs manual fill) / None (no such row). Composite key matched by component columns."""
     t = idx.get(table)
     if not t:
         return None
@@ -157,7 +158,7 @@ def _find_row(idx, table, keystr):
 
 
 def lookup(idx, table, keystr, field):
-    """真值字符串 / 'MULTI'(需手填) / None(查不到=断链 或 字段空)。复合键按分量列多列匹配。"""
+    """Real value string / 'MULTI' (needs manual fill) / None (not found = broken link, or field empty). Composite key matched across multiple component columns."""
     row = _find_row(idx, table, keystr)
     if row == "MULTI":
         return "MULTI"
@@ -168,8 +169,8 @@ def lookup(idx, table, keystr, field):
 
 
 def row_exists(idx, table, keystr):
-    """主键是否命中一行(不看字段值)。True / False / None(MULTI 无法判定 或 表不在)。
-    用于区分『引用悬空(行不存在)』与『字段值为空(可选字段)』,避免把空值误报成断链。"""
+    """Whether the primary key matches a row (ignores the field value). True / False / None (MULTI undecidable, or table not present).
+    Used to distinguish 'dangling reference (row does not exist)' from 'field value empty (optional field)', so empty values are not misreported as broken links."""
     row = _find_row(idx, table, keystr)
     if row == "MULTI" or (row is None and table not in idx):
         return None
@@ -177,7 +178,7 @@ def row_exists(idx, table, keystr):
 
 
 def column_values(idx, table, field):
-    """表某列全部非空值(字符串集合)。用于外键校验(目标列取值域)。"""
+    """All non-empty values of a table column (set of strings). Used for foreign-key validation (target column value domain)."""
     t = idx.get(table)
     if not t:
         return None
@@ -193,8 +194,8 @@ def column_values(idx, table, field):
 
 
 def array_column_values(idx, table, base):
-    """数组字段(`base[ … ]`)跨所有行的全部成员值(非空)。None=表/数组列不存在。
-    用于逐成员外键校验(如 evolveLine.member[] 每个 id ∈ unit.id)。"""
+    """All member values (non-empty) of an array field (`base[ ... ]`) across all rows. None = table/array column does not exist.
+    Used for per-member foreign-key validation (e.g. each id in evolveLine.member[] in unit.id)."""
     t = idx.get(table)
     if not t:
         return None

@@ -1,17 +1,17 @@
 syntax = "proto3";
-// 药水合成系统接口契约(玩具样例)。客户端 = 服务端同一份。
+// Potion-crafting system interface contract (toy example). Client = server, one and the same.
 
-// ---- 合成 R-POT-CRAFT ----
+// ---- Crafting R-POT-CRAFT ----
 message C2S_PotionCraft { int32 recipeId = 1; }            // 1700
 message S2C_PotionCraft {
   int32 err     = 1;   // 0=OK / ERR_MATERIAL_LACK / ERR_ITEM_LACK
-  int32 potionId = 2;  // 产出药水 id(=recipe.output)
-  int32 count   = 3;   // 产出数量
+  int32 potionId = 2;  // output potion id (=recipe.output)
+  int32 count   = 3;   // output quantity
 }
 
-// ---- 使用 R-POT-USE ----
+// ---- Use R-POT-USE ----
 message C2S_PotionUse { int32 potionId = 1; }              // 1701
 message S2C_PotionUse {
   int32 err  = 1;
-  int32 heal = 2;      // 实际回血 = potion.heal + potionLv[lv].heal,封顶最大生命
+  int32 heal = 2;      // actual heal = potion.heal + potionLv[lv].heal, capped at max HP
 }

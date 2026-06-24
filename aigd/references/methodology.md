@@ -1,92 +1,92 @@
-# AIGD 方法论 · 6 件套(可移植核心)
+# AIGD Methodology · The 6-Piece Set (portable core)
 
-> 由原单一 `aigd` skill 迁入。这是 AIGD 产出**单系统设计**的方法论真源,被 `aigd-system` / `aigd-handoff` 引用。
-> 注:文中出现的具体目录路径、品质/稀有度枚举名、模块码前缀等一律是**示意**,真值由「**项目档案**」逐项参数化——方法论本身**不绑定任何项目**。换项目只换项目档案,方法不变。
-> 另注:产出已按**两阶段**切分(见第 3 步 A/B):迭代期(system/iterate)只产 规则/配置/原型;契约/验收/后端**定稿后**由 `aigd-handoff` 生——别在设计还流动时锁契约。
-> **项目环境前置**:本包只要求一个**改动账本**(默认项目根 `CHANGELOG.md`)——脊柱可重入性靠它回填。**项目没有 → 首次跑按 `references/templates/CHANGELOG.tpl.md` 建**;**已有账本(任何名字)就沿用、别另起**;位置可在 `项目档案『目录布局』` 指定。回填由第 5 步 + 门禁第 8 条强制,**不依赖宿主 AI 指令文件**——CLAUDE.md / AGENTS.md / GEMINI.md 等是运行环境的事,AIGD 不建也不依赖(把"建 CLAUDE.md"塞进方法论会把它绑死在某 harness,与可移植相悖)。
+> Migrated in from the former single `aigd` skill. This is the canonical source for how AIGD produces a **single-system design**, referenced by `aigd-system` / `aigd-handoff`.
+> Note: every concrete directory path, quality/rarity enum name, module-code prefix, etc. that appears in this text is **illustrative**; the real values are parameterized item by item by the **project charter** — the methodology itself is **not bound to any project**. Switching projects only swaps the project charter; the method stays the same.
+> Also note: deliverables are split into **two phases** (see Step 3 A/B): the iteration phase (system/iterate) only produces rules/config/prototype; contract/acceptance/backend are generated **after finalization** by `aigd-handoff` — don't lock a contract while the design is still fluid.
+> **Project-environment prerequisite**: this package requires only one thing — a **change ledger** (default: project-root `CHANGELOG.md`). Spine re-entrancy relies on it for backfill. **If the project has none → on the first run, create it from `references/templates/CHANGELOG.tpl.md`**; **if a ledger already exists (under any name), reuse it, don't start a new one**; its location can be set in `project-charter"Directory Layout"`. Backfill is enforced by Step 5 + gate item 8, and **does not depend on any host-AI instruction file** — CLAUDE.md / AGENTS.md / GEMINI.md etc. are concerns of the runtime environment; AIGD neither creates nor depends on them (stuffing "create CLAUDE.md" into the methodology would bind it to a particular harness, contradicting portability).
 
 ---
 
-> **干活前过一眼** [`gotchas.md`](gotchas.md)(本包真踩过的执行/交接/校验坑:malformed 工具调用静默不执行、哨兵撞车、config↔doc 失同步、校验器误报、轻信子 agent 断言……);领域数值坑见 [`patterns/numeric-traps/numeric-traps.md`](patterns/numeric-traps/numeric-traps.md);访谈领域弹药见 [`patterns/loops/`](patterns/loops/)。
+> **Skim before working**: [`gotchas.md`](gotchas.md) (execution/handoff/validation pitfalls this package has actually hit: malformed tool calls silently not executing, sentinel collisions, config↔doc desync, validator false positives, blindly trusting sub-agent assertions…); domain numeric pitfalls in [`patterns/numeric-traps/numeric-traps.md`](patterns/numeric-traps/numeric-traps.md); interview-domain ammunition in [`patterns/loops/`](patterns/loops/).
 
-## 核心姿态
-入口是一场**设计讨论**,不是"先交一份策划案"。和用户聊出规则点、数值口径、界面意图,当场拍【待确认】,谈拢了再产出。源 xlsx(策划案/配置)是**可选燃料**——给了就读、当真源对齐;没给就靠访谈补齐,**绝不替用户硬编数值**。
+## Core stance
+The entry point is a **design discussion**, not "hand over a design doc first." Talk through the rule points, numeric conventions, and UI intent with the user, mark 【to-confirm】 on the spot, and only produce output once you've agreed. The source xlsx (design doc/config) is **optional fuel** — read it if given and align to it as the canonical source; if not given, fill the gaps by interview, and **never hard-code numbers on the user's behalf**.
 
-## 第 0 步:读真源(每次必做,用 Read,别凭记忆)
+## Step 0: Read the canonical source (do this every time, with Read, never from memory)
 
-> **先读脊柱,别读写死的项目文件名**。下面"取什么"是通用的;"从哪取"一律由 `项目档案『项目专属约定』` + 它指定的全局规范路径决定——换项目自动跟着变,不会扑空。
-> **新项目脊柱还没建** → 先 `aigd-concept` 建脊柱(本表来源就位后再回来);本包不依赖任何特定项目的文件名。
+> **Read the spine first, don't read hard-coded project filenames.** Below, "what to fetch" is generic; "where to fetch it" is always decided by `project-charter"Project-Specific Conventions"` + the global-spec paths it points to — switch projects and it follows automatically, never coming up empty.
+> **If the new project's spine isn't built yet** → run `aigd-concept` first to build the spine (come back once the sources in this table are in place); this package depends on no project-specific filename.
 
-| 取什么 | 从哪取（由项目档案决定,非写死） |
+| What to fetch | Where to fetch it (decided by the project charter, not hard-coded) |
 |--------|----------------------------------|
-| 目录布局 / 命名 / 量纲 / 品质体系 / 模块码风格 | `项目档案『项目专属约定』` |
-| 引用语法、`R-` 编号规则 + 已用模块码段(选码防撞) | 全局规范·编号登记(`项目档案『目录布局』` 指定的规范目录) |
-| 已有枚举——复用优先,勿重定义 | 全局规范·枚举字典(同上规范目录) |
-| 术语中英对照 | 全局规范·术语表(同上) |
-| 界面原型视觉真源(品牌 + 尺寸) | `项目档案『美术风格/品牌』` 指定的视觉规范 |
-| 仿其形态 / 粒度 / README 的样例 | 项目里任一已定稿系统(若有) |
+| Directory layout / naming / units / quality system / module-code style | `project-charter"Project-Specific Conventions"` |
+| Reference syntax, `R-` numbering rules + already-used module-code ranges (pick a code, avoid collisions) | Global spec · numbering registry (the spec directory designated by `project-charter"Directory Layout"`) |
+| Existing enums — reuse first, don't redefine | Global spec · enum dictionary (same spec directory as above) |
+| Term CN↔EN glossary | Global spec · glossary (same) |
+| UI-prototype visual canonical source (brand + dimensions) | The visual spec designated by `project-charter"Art Style / Brand"` |
+| Samples to imitate in form / granularity / README | Any already-finalized system in the project (if any) |
 
-## 第 0.5 步:有源 xlsx 才读(可选)——解析有坑
+## Step 0.5: Read the source xlsx only if there is one (optional) — parsing has pitfalls
 
-- **openpyxl 读国产工具导出的 xlsx 会报 `Colors must be aRGB hex values`** → 改用 `zipfile` + `xml.etree.ElementTree` 直解:`xl/sharedStrings.xml`、`xl/workbook.xml`+`xl/_rels/workbook.xml.rels`(sheet 名↔文件)、`xl/worksheets/*.xml` 的 `sheetData`(`t="s"` 取 sharedStrings、`inlineStr` 取 `<is>`、否则取 `<v>`)。
-- **中文写 UTF-8 文件再用 Read 看**(直接 print 会乱码)。dump 连前 4 行表头一起导,schema 自现。
-- **可复用解析脚本见 `references/scripts/`**:`xlsx_dump.py`(解任意国产 xlsx,即上条 zipfile+xml 实现)/ `resolve_loc.py`(LocalizationText 文本 id→中文)。argv 驱动、无项目硬编码,直接 `python …/xlsx_dump.py <表> <out.txt>`。
-- **dump 产物**(`dump_*.txt` 等中间件)放工作目录,**确认后清理**——清的是**产物**,可复用**脚本**已在包里,别清。
-- **自描述表头**:行1=表英文名(kv 表带 `kv:`)、行2=类型、行3=字段 key(数组 `field[…]`、对象数组 `field.sub[{a|b|c}…]`)、行4=中文名;行5+ 数据。三种**旁注列**导表忽略仅供人读:**明文列**(文本 id 右侧中文)、**派生列**(代码生成的统计)、**图例块**(枚举说明粘表尾)。
+- **openpyxl reading xlsx exported by domestic (Chinese) tools throws `Colors must be aRGB hex values`** → switch to `zipfile` + `xml.etree.ElementTree` and parse directly: `xl/sharedStrings.xml`, `xl/workbook.xml` + `xl/_rels/workbook.xml.rels` (sheet name ↔ file), and the `sheetData` of `xl/worksheets/*.xml` (`t="s"` → take from sharedStrings, `inlineStr` → take from `<is>`, otherwise take `<v>`).
+- **Write Chinese to a UTF-8 file then view it with Read** (printing directly garbles). The dump exports the first 4 header rows along with the data, so the schema is self-evident.
+- **Reusable parsing scripts are in `references/scripts/`**: `xlsx_dump.py` (parses any domestic xlsx — the zipfile+xml implementation above) / `resolve_loc.py` (LocalizationText text id → Chinese). They're argv-driven with no project hard-coding: just `python …/xlsx_dump.py <table> <out.txt>`.
+- **Dump artifacts** (intermediate files like `dump_*.txt`) go in the working directory and are **cleaned up after confirmation** — what gets cleaned is the **artifact**; the reusable **script** is already in the package, don't clean it.
+- **Self-describing header**: row 1 = the table's English name (kv tables carry `kv:`), row 2 = type, row 3 = field key (arrays `field[…]`, object-arrays `field.sub[{a|b|c}…]`), row 4 = Chinese name; rows 5+ = data. Three kinds of **side-note columns** are ignored on import and exist only for humans: **plaintext columns** (Chinese to the right of a text id), **derived columns** (code-generated statistics), and **legend blocks** (enum explanations pasted at the table's tail).
 
-## 第 1 步:设计访谈(把系统聊出来)
+## Step 1: Design interview (talk the system out)
 
-主动逐项问、当场拍:**意图/边界**、**核心规则点**(每条挂 R-编号)、**数值口径**(不替拍、列【待确认】)、**界面意图**(有图优先)、**配置预期**(要哪些表/主键)、**复用哪些枚举/模块码**。
-- 缺的逐项反问,别脑补;待定列【待确认】交用户拍板。
-- 给了源 xlsx 且与口头/策划案不一致 → **先辨配置来源再定权威**(防把过期/垃圾/测试数据锁进脊柱):策划手填→以配置为准、口头差异标 `[待确认]`;工具导出→以访谈为准、配置差异标 `[待确认]`;来源存疑→两端都列、全标 `[待确认]`、**不替拍**。任何情况都如实写"策划案述 X,配置当前为 Y",不替补字段。
-- 没有任何源 xlsx → 访谈结论即真源,涉及数值一律 `[待确认]`。
+Proactively ask item by item and decide on the spot: **intent/boundary**, **core rule points** (each tagged with an R-code), **numeric conventions** (don't decide for them, list 【to-confirm】), **UI intent** (image preferred if available), **config expectations** (which tables/primary keys are needed), **which enums/module-codes to reuse**.
+- Ask back item by item for whatever's missing, don't fill in from imagination; list pending items as 【to-confirm】 for the user to decide.
+- If a source xlsx was given and it conflicts with the verbal/design-doc account → **first determine the config's origin, then decide which is authoritative** (to avoid locking stale/junk/test data into the spine): planner hand-filled → config wins, mark verbal discrepancies `[to-confirm]`; tool-exported → interview wins, mark config discrepancies `[to-confirm]`; origin uncertain → list both ends, mark all `[to-confirm]`, **don't decide for them**. In every case, faithfully write "design doc says X, config currently Y"; don't fill in fields on their behalf.
+- No source xlsx at all → the interview conclusion is the canonical source; anything involving numbers is uniformly `[to-confirm]`.
 
-## 第 2 步:定目录与命名
+## Step 2: Set the directory and naming
 
-> **目录布局/命名以 `项目档案『目录布局・命名规范』` 为准——它是单一开关。** 下文是一种常见布局(系统内 6 件套 `-0X` 同目录,扁平);若项目档案选工程化布局(`docs/`+`proto/`+`config/` 分置,见 `manifest` 跨层索引 / `实现总纲`),按那个走。两者只是 `目录布局` 的不同取值,**不是两套方法**——别照搬下文路径覆盖项目档案。
-> **存量 flat 项目迁移 = MOVE(移动)真源,不是 COPY**:复制会让 flat 与 `docs/` 双真源漂移。一次性迁移、迁完弃用 flat 路径;若必须并存过渡期,**明确标哪边是真源**。各件命名映射见 `project-charter.tpl`「布局切换命名映射」。
+> **Directory layout/naming is governed by `project-charter"Directory Layout · Naming Convention"` — it is the single switch.** What follows is one common layout (the system's 6-piece set `-0X` in the same directory, flat); if the project charter chose the engineered layout (`docs/` + `proto/` + `config/` split apart, see the `manifest` cross-layer index / `Implementation Overview`), go by that. The two are just different values of `Directory Layout`, **not two different methods** — don't copy the paths below over the project charter.
+> **Migrating an existing flat project = MOVE the canonical source, not COPY**: copying makes flat and `docs/` drift into dual canonical sources. Migrate in one shot and abandon the flat path afterward; if a coexistence transition period is unavoidable, **clearly mark which side is canonical**. The per-piece naming map is in `project-charter.tpl`「Layout-Switch Naming Map」.
 
-- 一个系统 = 一个目录,放对应区下 `<区>-<子序号><子名>-<系统序号><系统名>/`。动已有文件前先看、先确认(非 git)。
-- 文件命名 = `<文件夹全名>-<两位序号><文件类型>`:`-01系统rules.md`/`-02config-spec.md`/`-03界面原型.html`/`-04接口契约.proto`/`-05acceptance.md`/`-06后端开发.md`(按需)。
-- **选唯一模块码** `R-<模块>`——先查编号段表防撞,建完登记。
-- 跨系统引用**位置无关**(`表名[主键].字段` / `屏ID.元素ID` / `R-编号`)。
+- One system = one directory, placed under the corresponding zone as `<zone>-<sub-seq><sub-name>-<system-seq><system-name>/`. Before touching an existing file, look first and confirm first (not git).
+- File naming = `<full-folder-name>-<two-digit-seq><file-type>`: `-01systemrules.md` / `-02config-spec.md` / `-03ui-prototype.html` / `-04interface-contract.proto` / `-05acceptance.md` / `-06backend-dev.md` (as needed).
+- **Pick a unique module-code** `R-<module>` — check the numbering-range table first to avoid collisions, register after creating.
+- Cross-system references are **position-independent** (`tableName[primaryKey].field` / `screenID.elementID` / `R-code`).
 
-## 第 3 步:产出(两阶段切分 —— 延迟成形的关键)
+## Step 3: Produce output (the two-phase split — the key to deferred shaping)
 
-> 迭代期只产"便宜、会改"的;"贵的、下游的"等**定稿后**由 `aigd-handoff` 生。别在设计还流动时锁契约。
+> The iteration phase produces only the "cheap, will-change" things; the "expensive, downstream" things wait **until finalization** to be generated by `aigd-handoff`. Don't lock the contract while the design is still fluid.
 
-### A. system 阶段产出(迭代期 · aigd-system / aigd-iterate)
+### A. system-phase output (iteration phase · aigd-system / aigd-iterate)
 
-1. **-01系统rules.md** —— 功能规则,每条程序判断挂 `R-<模块>-<子系统>-<序号>`;散文**无裸数值**(只写公式 + 字段引用);第二部分写**界面 DSL**(`# 屏IdUI` + `## Layout` 缩进树[`:来源` `[态]` `×N`] + `## Events` `<触发> <元素> [守卫] -> 结果`,挂 R-编号)。
-2. **枚举/量纲/模块码 轻量登记** —— 规则要引用,故就地登记:新枚举 / R-模块段写进 `项目档案『目录布局』` 指定的**全局规范文件**(**举例**:本项目 = `枚举字典.md` / `ID与量纲约定.md`)(纯运行态枚举/错误码可留到契约阶段)。
-3. **-02配置说明 + 配置表(测试数据)** —— 每表逐字段 类型/范围/引用/枚举批注 + 校验清单;配置已填→只描述+校验断链、绝不覆盖;不存在→给带自描述表头的空 xlsx **并填测试数据**(供原型与试玩);无独立表→写清消费的外部表依赖。
-4. **-03界面原型.html** —— 由 -01 的 DSL 生成矢量可点线框,**单文件零依赖可离线**。可委托子 agent;产后必验收:无 BOM、零外链、各屏齐、交互在;**示意数据与配置真源对量**。
-   - **适用性边界**:对 UI 密集系统(背包/商城/养成)够用;对**实时战斗/物理/多人交互**,可点线框只验信息架构与流程,**验不了手感/时序/网络**——这类"感觉"留给后续工程原型或专项验证,别拿 html 原型当手感/数值已验。
-5. **README.md(草稿)** —— 先占位:6 件套对照 + 入口;定稿时补全。
+1. **-01systemrules.md** — feature rules, each program-judgeable rule tagged `R-<module>-<subsystem>-<seq>`; prose has **no bare numbers** (write only formulas + field references); the second part writes the **UI DSL** (`# screenIdUI` + `## Layout` indented tree [`:source` `[state]` `×N`] + `## Events` `<trigger> <element> [guard] -> result`, tagged with R-codes).
+2. **Lightweight registration of enums/units/module-codes** — the rules need to reference them, so register them in place: write new enums / R-module ranges into the **global-spec file** designated by `project-charter"Directory Layout"` (**for example**: in this project = `enum-dictionary.md` / `id-and-units-convention.md`) (pure runtime enums / error codes can wait for the contract phase).
+3. **-02 config-spec + config tables (test data)** — for each table, field by field: type/range/reference/enum annotations + a validation checklist; if config is already filled → only describe + validate broken links, never overwrite; if it doesn't exist → provide an empty xlsx with a self-describing header **and fill in test data** (for prototyping and playtesting); if there's no standalone table → clearly write the external-table dependencies it consumes.
+4. **-03ui-prototype.html** — generated from the DSL of -01 as a vector clickable wireframe, **single file, zero dependencies, works offline**. May be delegated to a sub-agent; must be acceptance-checked after production: no BOM, zero external links, all screens present, interactions in place; **the sample data is in the same units as the canonical config source**.
+   - **Applicability boundary**: it's sufficient for UI-dense systems (inventory/shop/progression); for **real-time combat/physics/multiplayer interaction**, a clickable wireframe only validates information architecture and flow, and **cannot validate feel/timing/networking** — leave that "feel" to a later engineering prototype or dedicated validation; don't treat the html prototype as having already validated feel/numbers.
+5. **README.md (draft)** — placeholder first: the 6-piece set cross-reference + entry points; fill in fully at finalization.
 
-### B. handoff 阶段产出(定稿后 · aigd-handoff)
+### B. handoff-phase output (after finalization · aigd-handoff)
 
-6. **-04接口契约.proto** —— 协议 + 存档 + 运行期 + 错误码,客户端=服务端同一份;从 manifest 领号段。
-7. **-05acceptance.md** —— Gherkin,每条挂 R-编号,正常+边界,断言用 proto 字段 + `表[主键].字段`。
-8. **-06后端开发.md(按需)** —— 规则/契约之外存在服务端取数+计算决策时才写。
-9. **策划版验收清单(md+xlsx)** —— 见 `handoff-checklist.md`。
-10. **README.md(终稿)** —— 6 件套对照表 + 5 类角色入口 + ID 串联闭环图 + 门禁自检表 + 外部依赖/待确认。
+6. **-04interface-contract.proto** — protocol + archive + runtime + error codes, client = server, the same single file; draw the number range from the manifest.
+7. **-05acceptance.md** — Gherkin, each tagged with an R-code, normal + boundary, assertions using proto fields + `table[primaryKey].field`.
+8. **-06backend-dev.md (as needed)** — write only when there's a server-side fetch+compute decision that exists beyond the rules/contract.
+9. **Planner-version acceptance checklist (md+xlsx)** — see `handoff-checklist.md`.
+10. **README.md (final)** — the 6-piece set cross-reference table + entry points for 5 role types + the ID-threading closed-loop diagram + the gate self-check table + external dependencies / to-confirm.
 
-## 第 4 步:质量门禁(八条,逐条在 README 标结果)
-① 每条程序判断/测试断言有 R-编号 ② 每 R-编号在验收 ≥1 场景 ③ 配置每字段有 类型/范围/引用、枚举入字典 ④ 散文无裸数值 ⑤ 协议/存档类型化、两端同一份 ⑥ 界面每可点元素有交互+状态、原型零依赖可离线 ⑦ 枚举/量纲/ID 无重复定义 ⑧ 改动已写 CHANGELOG(改动账本)。任一不过 → 补到过。
+## Step 4: Quality gate (eight items, mark the result of each in the README)
+① every program judgment / test assertion has an R-code ② every R-code has ≥1 scenario in acceptance ③ every config field has type/range/reference, enums entered into the dictionary ④ prose has no bare numbers ⑤ protocol/archive are typed, the same single file on both ends ⑥ every clickable UI element has interaction + state, the prototype is zero-dependency and works offline ⑦ no duplicate definitions of enums/units/IDs ⑧ changes written to CHANGELOG (the change ledger). Any item failing → fix until it passes.
 
-## 第 5 步:回填 CHANGELOG（改动账本,硬要求 —— 见「项目环境前置」)
-每个文件改动后,在项目账本(默认根 `CHANGELOG.md`;沿用项目已有账本名)末尾追加 `| YYYY-MM-DD HH:mm | 文件 | 内容 | 原因 | 模型 |`(格式/初始化见 `references/templates/CHANGELOG.tpl.md`;项目没有该账本 → 先按模板建再回填)。
-- **内容列别用裸 `|`**(撑乱表格)——用 `/` 或 `\|`。
-- 委托子 agent 时让它也按此追加;并行写同一文件先重读末尾再追加,别覆盖。
+## Step 5: Backfill CHANGELOG (the change ledger, hard requirement — see "Project-environment prerequisite")
+After each file change, append `| YYYY-MM-DD HH:mm | file | content | reason | model |` to the end of the project ledger (default root `CHANGELOG.md`; reuse the project's existing ledger name) (format / initialization in `references/templates/CHANGELOG.tpl.md`; if the project has no such ledger → create it from the template first, then backfill).
+- **Don't use a bare `|` in the content column** (it breaks the table) — use `/` or `\|`.
+- When delegating to a sub-agent, have it append the same way; for parallel writes to the same file, re-read the tail before appending — don't overwrite.
 
 ---
 
-## 硬约束(别违反)
-- 文件 **UTF-8 无 BOM**(中文加 BOM/变 UTF-16 会让下游乱码);各 harness 写法见 `harness-adapt.md`(Claude Code 的 Write 默认无 BOM;PowerShell 写中文要 `UTF8Encoding $false`)。
-- 仓库**非 git**,删除/重命名不可逆——动已有文件/删临时产物前先看、先确认;**不动/不覆盖**用户的源 xlsx 与已填配置。
-- 万分比统一 `/10000`;引用按名(位置无关)。
-- **配置表统一归项目层全局池**(`config/source/` 等),**无系统私有表**:任一系统按名引用、位置无关、不独占;别把某表当某系统私有(`base`/`property`=属性源 等是纯全局源、无单一维护系统;维护者见 manifest「反向提供」)。跨系统引用一张表 = 普通引用,不构成系统依赖边。
-- **广播型共享真源**(被多数系统引用的 id 命名空间 / 文本结构 / 枚举)**只追加、不破坏**(枚举只加值不删义、表加字段不删字段、id 不复用);破坏性变更才通知引用方——**别用"逐系统标重验"管它**(扇出=全项目会炸,登记到 `manifest` F 表)。
-- **多套品质/稀有度枚举别混**:一个项目常有几套互不相干的品质维度(如物品稀有度、装备品质、角色品质各一套,数值域/档数都不同),各管各的、别共用同一枚举;具体有哪几套登记到 `项目档案『品质体系』`。
-- **工具调用必须用你 harness 要求的 function-call 块格式**,否则可能静默不执行(文件没写却以为做了)——发后用读文件/`ls` 复核产物真落盘。各 harness 写法见 `harness-adapt.md`(如 Claude Code 要 `antml:` 命名空间前缀)。
+## Hard constraints (don't violate)
+- Files are **UTF-8 without BOM** (adding a BOM / turning into UTF-16 garbles things downstream for Chinese); per-harness specifics in `harness-adapt.md` (Claude Code's Write defaults to no BOM; PowerShell writing Chinese needs `UTF8Encoding $false`).
+- The repo is **not git**; delete/rename is irreversible — before touching an existing file / deleting a temp artifact, look first, confirm first; **don't touch / don't overwrite** the user's source xlsx and already-filled config.
+- Per-myriad (basis points) uniformly `/10000`; reference by name (position-independent).
+- **Config tables are uniformly pooled in the project-level global pool** (`config/source/` etc.), with **no per-system private tables**: any system references by name, position-independently, without monopolizing; don't treat a table as private to one system (`base` / `property` = attribute source etc. are pure global sources with no single maintaining system; for maintainers see manifest「reverse-provides」). A cross-system reference to one table = an ordinary reference, and does not constitute a system dependency edge.
+- **Broadcast-type shared canonical sources** (an id namespace / text structure / enum referenced by most systems) are **append-only, never break** (enums only add values, don't drop meanings; tables add fields, don't drop fields; ids aren't reused); only a breaking change notifies referencers — **don't manage it with "mark systems for recheck one by one"** (fan-out = the whole project blows up; register it in the `manifest` F table).
+- **Don't mix multiple quality/rarity enums**: a project often has several mutually unrelated quality dimensions (e.g. item rarity, equipment quality, character quality — each a separate set, with different numeric domains / tier counts); each is managed separately, don't share one enum; which sets exist is registered in `project-charter"Quality System"`.
+- **Tool calls must use the function-call block format your harness requires**, or they may silently fail to execute (the file isn't written but you think it was) — after sending, double-check the artifact actually landed on disk with read-file / `ls`. Per-harness specifics in `harness-adapt.md` (e.g. Claude Code requires the `antml:` namespace prefix).

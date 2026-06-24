@@ -1,106 +1,106 @@
-# AIGD — AI 辅助游戏设计方法论（可移植 skill 包）
+# AIGD — AI-assisted game design methodology (portable skill package)
 
-把**游戏系统设计**变成一份**平台无关的交接包**,让另一个 AI(或人)能照着直接开发;并自带**确定性校验器**,把交接包门控到"可消费"才放行。
+Turns **game system design** into a **platform-agnostic handoff package** that another AI (or person) can develop directly from; and ships **deterministic checkers** that gate the handoff package to "consumable" before letting it through.
 
-> 一句话:`aigd` 不替你拍数值、不绑定引擎——它是一套**讨论驱动**的设计流程 + 一组**机检脚本**,产出"规则/配置/契约/验收"四对齐、下游零猜的系统文档。
-
----
-
-## 它解决什么
-
-游戏设计交接最常见的失败不是文档写得少,而是**文档与配置悄悄失同步**("文档先定、表格后改没回写"),下游 AI/程序各读各的 → 实现分叉。AIGD 用三招挡住它:
-
-1. **结构化产出(6 件套)**——每条规则挂编号、每个数值住配置表、散文只引 `表[主键].字段`,消除可解释空间。
-2. **未定的显式挂账**——拿不准的口径一律标 `[待确认]` 交人拍板,AI 不替拍;这些标记恰好预言了下游会分叉的地方。
-3. **确定性机检**——`config_check`/`value_check`/`manifest_check` 把"配置↔文档↔脊柱"的一致性变成退出码,0 major 才算可交接。
+> In one line: `aigd` doesn't decide your numbers for you, doesn't bind to an engine — it's a **discussion-driven** design flow + a set of **machine-check scripts**, producing system docs where "rules / config / contract / acceptance" are four-way aligned and downstream guesses nothing.
 
 ---
 
-## 产出:一个系统的「6 件套」
+## What it solves
 
-| # | 产物 | 受众 |
+The most common failure in game-design handoff isn't too little documentation, it's **docs and config quietly drifting out of sync** ("doc fixed first, table changed later without writing it back"), with downstream AI/programmers each reading their own → forked implementations. AIGD blocks it three ways:
+
+1. **Structured output (the 6-piece set)** — every rule tagged with a number, every value living in a config table, prose only referencing `table[primary key].field`, eliminating room for interpretation.
+2. **Explicit ledgering of the undecided** — any uncertain convention is uniformly tagged `[to confirm]` and handed to a person to decide, the AI doesn't decide; these marks happen to predict exactly where downstream will fork.
+3. **Deterministic machine checks** — `config_check`/`value_check`/`manifest_check` turn the "config↔doc↔spine" consistency into an exit code, 0 major counts as handoffable.
+
+---
+
+## Output: a system's "6-piece set"
+
+| # | Artifact | Audience |
 |---|------|------|
-| 1 | 功能规则(挂 `R-` 编号 + 界面 DSL) | 全员 |
-| 2 | 配置表(自描述表头 xlsx,带测试数据) | 数值 |
-| 3 | 配置说明(逐字段 类型/范围/引用) | 数值 + 导表 |
-| 4 | 接口契约(proto,客户端=服务端同一份) | 前后端 |
-| 5 | 界面规格 + 单文件可点原型 | 美术 + 客户端 |
-| 6 | 验收用例(Gherkin,挂 `R-` 编号) | 测试 |
+| 1 | Functional rules (tagged with `R-` numbers + UI DSL) | everyone |
+| 2 | Config table (self-describing header xlsx, with test data) | numbers |
+| 3 | Config spec (per-field type/range/reference) | numbers + table export |
+| 4 | Interface contract (proto, client = server, one copy) | front + back end |
+| 5 | UI spec + single-file clickable prototype | art + client |
+| 6 | Acceptance cases (Gherkin, tagged with `R-` numbers) | testing |
 
-迭代期只产"便宜会改"的(规则/配置/原型),定稿后才生"贵的下游的"(契约/验收/后端)——别在设计还流动时锁契约。
+During iteration only the "cheap, will-change" ones are produced (rules/config/prototype), the "expensive, downstream" ones are produced only after finalization (contract/acceptance/backend) — don't lock the contract while the design is still fluid.
 
 ---
 
-## 包结构
+## Package structure
 
 ```text
-aigd/                  ← 本包 · 编排器 + 方法论真源
-├── SKILL.md           编排器:读脊柱→判断进度→分派到子 skill
-├── README.md          ← 你在看的这份
-├── references/        方法论唯一真源(不复制、不漂移)
-│   ├── methodology.md       设计访谈 / 命名 / 编号 / 八条门禁
-│   ├── ui-dsl-spec.md        截图→DSL 的文法契约
-│   ├── gotchas.md       真踩过的执行/交接/校验坑
-│   ├── templates/           脊柱三模板(项目档案 / manifest / 实现总纲)
-│   ├── patterns/            领域弹药(核心循环 / 养成范式 / 数值陷阱)
-│   └── scripts/             确定性校验/工具脚本(纯 stdlib 为主)+ 测试
+aigd/                  ← this package · orchestrator + methodology source of truth
+├── SKILL.md           orchestrator: read spine → judge progress → dispatch to sub-skill
+├── README.md          ← the one you're reading
+├── references/        the single source of truth for the methodology (no copying, no drift)
+│   ├── methodology.md       design interview / naming / numbering / the eight gates
+│   ├── ui-dsl-spec.md        the grammar contract for screenshot→DSL
+│   ├── gotchas.md       execution/handoff/check pitfalls actually stepped on
+│   ├── templates/           the three spine templates (project charter / manifest / implementation master guide)
+│   ├── patterns/            domain rounds (core loops / progression paradigms / number traps)
+│   └── scripts/             deterministic check/tool scripts (mostly pure stdlib) + tests
 └── examples/
-    └── potion-crafting/     ← 自包含玩具样例,跑通 3 个校验器
-aigd-concept/   阶段1 立意 → 系统清单 + 脊柱
-aigd-system/    阶段2 单系统设计(规则/配置/原型)
-aigd-iterate/   阶段3 试玩迭代
-aigd-handoff/   阶段4 定稿 → 契约/验收/交接包
-aigd-sync/      贯穿:回写整合 + 标重验
-aigd-ui-capture/ 工具:界面截图 → 界面 DSL
+    └── potion-crafting/     ← self-contained toy sample, runs the 3 checkers through
+aigd-concept/   Phase 1 concept → system list + spine
+aigd-system/    Phase 2 single-system design (rules/config/prototype)
+aigd-iterate/   Phase 3 playtest iteration
+aigd-handoff/   Phase 4 finalize → contract/acceptance/handoff package
+aigd-sync/      cross-cutting: sync-back integration + mark recheck
+aigd-ui-capture/ tool: UI screenshot → UI DSL
 ```
 
-**整包安装、不可拆**:6 个子 skill 与 `aigd/` **同级**放入宿主的 skills 目录(如 Claude Code 的 `.claude/skills/`)。子 skill 正文用 `../aigd/references/` 取方法论,故 `aigd/` 必须同级存在。
+**Install the whole package, can't be split**: the 6 sub-skills go **at the same level** as `aigd/` in the host's skills directory (e.g. Claude Code's `.claude/skills/`). Sub-skill bodies use `../aigd/references/` to fetch the methodology, so `aigd/` must exist at the same level.
 
 ---
 
-## 上手
+## Getting started
 
-1. **装**:把下面**这 7 个文件夹(不多不少)**整体拷进宿主的 skills 目录(Claude Code = `.claude/skills/`),保持**平级**:
+1. **Install**: copy the following **7 folders (no more no less)** as a whole into the host's skills directory (Claude Code = `.claude/skills/`), keeping them **at the same level**:
 
    ```text
-   aigd/            ← 编排器 + references/(含方法论、脚本、模板、patterns、examples)
-   aigd-concept/    阶段1 立意
-   aigd-system/     阶段2 单系统设计
-   aigd-iterate/    阶段3 迭代
-   aigd-handoff/    阶段4 定稿交接
-   aigd-sync/       回写整合
-   aigd-ui-capture/ 界面截图→DSL
+   aigd/            ← orchestrator + references/ (contains the methodology, scripts, templates, patterns, examples)
+   aigd-concept/    Phase 1 concept
+   aigd-system/     Phase 2 single-system design
+   aigd-iterate/    Phase 3 iteration
+   aigd-handoff/    Phase 4 finalize & handoff
+   aigd-sync/       sync-back integration
+   aigd-ui-capture/ UI screenshot→DSL
    ```
 
-   - **必须 7 个都拷且平级**:子 skill 正文用 `../aigd/references/` 取方法论,缺 `aigd/` 或层级错就断链。
-   - **不要拷** skills 目录下与 aigd 无关的其它 skill(它们是各自项目的东西);`.gitignore` 拷不拷都行。
-   - 装好后该目录下应**正好**是这 7 个 `aigd`/`aigd-*` 文件夹。
-   - **换 harness**:ZCode 装 `~/.zcode/skills/`;Gemini `~/.gemini/skills/`(或 `gemini skills install <repo>` 一键装);Codex `~/.codex/skills/`(或自带 skill-installer)。`SKILL.md` 格式在这几家通用且已实测;**Copilot 1.0.63 无 skills 机制、需适配**。装哪、怎么唤起、工具名对应见 [`references/harness-adapt.md`](references/harness-adapt.md)。
-2. **跑校验器要 Python**(多数脚本纯标准库;`ui_palette`/`ui_slice` 需 Pillow,`gherkin_to_checklist` 写 xlsx 需 openpyxl,见 `references/scripts/requirements.txt`)。
-3. **新项目**:调 `aigd`(不知道在哪一步就让它路由)或直接 `aigd-concept` 立意建脊柱 → `aigd-system` 逐系统设计 → 定稿 `aigd-handoff`。
-4. **先感受**:进 [`examples/potion-crafting/`](examples/potion-crafting/),照其 README 把 3 个校验器跑一遍,看"6 件套 + 机检门控"实际长什么样。
+   - **All 7 must be copied and at the same level**: sub-skill bodies use `../aigd/references/` to fetch the methodology, missing `aigd/` or a wrong level breaks the link.
+   - **Don't copy** other skills in the skills directory unrelated to aigd (they belong to their own projects); `.gitignore` can be copied or not, either way.
+   - After installing, that directory should contain **exactly** these 7 `aigd`/`aigd-*` folders.
+   - **Switching harness**: ZCode installs to `~/.zcode/skills/`; Gemini `~/.gemini/skills/` (or `gemini skills install <repo>` to install in one step); Codex `~/.codex/skills/` (or its built-in skill-installer). The `SKILL.md` format is common across these and already tested; **Copilot 1.0.63 has no skills mechanism, needs adapting**. Where to install, how to invoke, tool-name mapping: see [`references/harness-adapt.md`](references/harness-adapt.md).
+2. **Running the checkers needs Python** (most scripts are pure standard library; `ui_palette`/`ui_slice` need Pillow, `gherkin_to_checklist` writing xlsx needs openpyxl, see `references/scripts/requirements.txt`).
+3. **New project**: call `aigd` (let it route if you don't know which step you're at) or directly `aigd-concept` to set the concept and build the spine → `aigd-system` system-by-system design → finalize with `aigd-handoff`.
+4. **Get a feel first**: go into [`examples/potion-crafting/`](examples/potion-crafting/), follow its README to run the 3 checkers once, and see what "6-piece set + machine-check gating" actually looks like.
 
 ---
 
-## 校验器(references/scripts)
+## Checkers (references/scripts)
 
-| 脚本 | 管什么 | 依赖 |
+| Script | What it manages | Dependency |
 |------|--------|------|
-| `config_check.py` | 配置说明 ↔ xlsx **schema 漂移**(列/类型/表名/域) | stdlib |
-| `value_check.py` | 配置**数据完整性**(外键断链/验收悬空/覆盖·单调·基数) | stdlib |
-| `manifest_check.py` | 脊柱 **manifest 自洽**(模块码登记/依赖指向/状态/分块/依赖环 SCC) | stdlib |
-| `ui_render.py` | 界面 DSL → 可点 html/svg 线框 | stdlib |
-| `gherkin_to_checklist.py` | 验收用例 → 策划版清单 xlsx | openpyxl |
-| `xlsx_dump.py` | 任意 xlsx → 文本(绕开 openpyxl 对国产导表的报错) | stdlib |
+| `config_check.py` | config spec ↔ xlsx **schema drift** (column/type/table-name/domain) | stdlib |
+| `value_check.py` | config **data integrity** (foreign-key breakage/dangling acceptance/coverage·monotonic·cardinality) | stdlib |
+| `manifest_check.py` | spine **manifest self-consistency** (module-code registration/dependency targets/status/chunking/dependency-cycle SCC) | stdlib |
+| `ui_render.py` | UI DSL → clickable html/svg wireframe | stdlib |
+| `gherkin_to_checklist.py` | acceptance cases → designer-facing checklist xlsx | openpyxl |
+| `xlsx_dump.py` | any xlsx → text (sidesteps openpyxl's errors on domestically-exported tables) | stdlib |
 
-全部 **argv 驱动、零项目硬编码、确定性**(可进 CI)。详见 [`references/scripts/README.md`](references/scripts/README.md)。退出码非 0 = 有 major,接进定稿门禁。
+All **argv-driven, zero project hardcoding, deterministic** (CI-ready). See [`references/scripts/README.md`](references/scripts/README.md). Non-zero exit code = has major, wired into the finalization gate.
 
 ---
 
-## 可移植 & 状态
+## Portability & status
 
-- **跨 harness**:包结构(`SKILL.md` + `name`/`description` frontmatter)在 **Claude Code / ZCode / Gemini CLI / Codex** 通用;不同的只是装哪个目录、怎么唤起、读写工具名——见 [`references/harness-adapt.md`](references/harness-adapt.md)。方法论本身不依赖任何 harness、不依赖其指令文件(`CLAUDE.md`/`AGENTS.md`/`GEMINI.md`)。校验器脚本是 argv 驱动命令行,只要有 Python 哪家都一样用。
-  > **实测状态(2026-06-23)**:已在 **Claude Code(原生·真项目)、ZCode 3.1.3(Claude 系)、Gemini CLI 0.47(Google)、Codex 0.140(OpenAI)** 四个 harness 实测跑通——发现 + 路由 + 执行全过,**含 Gemini、Codex 两个跨厂**;Gemini/Codex 还能用各自原生 installer 从本仓库一键装。**Copilot CLI 1.0.63 经实测无 SKILL.md skills 机制**(走 AGENTS.md/MCP/plugin),aigd 需适配。详见 [`references/harness-adapt.md`](references/harness-adapt.md)。
-- **适用边界**:管设计交接的结构与一致性,**不管数值平衡**;html 原型验信息架构/流程,**验不了手感/时序/网络**(实时战斗类只验信息架构);UI 密集系统适配最好。详见仓库根 `README.md`「适用边界」。
-- **项目专属**(立意/约定/系统清单/号段)全部住**脊柱**(`项目档案`/`manifest`),不进本包——换项目换 AI,读脊柱即可接手。
-- `patterns/` 是会长大的**启动包**(目前:5 种核心循环 / 战斗单位养成范式 / 10 条数值陷阱)。
+- **Cross-harness**: the package structure (`SKILL.md` + `name`/`description` frontmatter) is common across **Claude Code / ZCode / Gemini CLI / Codex**; the only differences are which directory to install to, how to invoke, and the read/write tool names — see [`references/harness-adapt.md`](references/harness-adapt.md). The methodology itself depends on no harness, nor on its instruction files (`CLAUDE.md`/`AGENTS.md`/`GEMINI.md`). The checker scripts are argv-driven command lines, used the same everywhere as long as there's Python.
+  > **Tested status (2026-06-23)**: tested working in practice across four harnesses — **Claude Code (native · real project), ZCode 3.1.3 (Claude family), Gemini CLI 0.47 (Google), Codex 0.140 (OpenAI)** — discovery + routing + execution all passing, **including the two cross-vendor ones Gemini and Codex**; Gemini/Codex can also install from this repo in one step with their respective native installers. **Copilot CLI 1.0.63 was tested and has no SKILL.md skills mechanism** (goes through AGENTS.md/MCP/plugin), aigd needs adapting. See [`references/harness-adapt.md`](references/harness-adapt.md).
+- **Scope of applicability**: manages the structure and consistency of design handoff, **not number balance**; the html prototype verifies information architecture/flow, **can't verify feel/timing/networking** (real-time combat types only verify information architecture); best suited for UI-dense systems. See the repo root `README.md` "Scope of applicability".
+- **Project-specific** (concept/conventions/system list/number ranges) all lives in the **spine** (`project charter`/`manifest`), not in this package — switch projects, switch AI, just read the spine to pick it up.
+- `patterns/` is a starter pack that will grow (currently: 5 core loops / a combat-unit progression paradigm / 10 number traps).

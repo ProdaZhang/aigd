@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
-"""ref_graph —— 设计文件**双向引用图** + **悬空引用门禁**(纯 stdlib,复用 ref_lib/config_index/xlsx_dump)。
+"""ref_graph -- design-file **bidirectional reference graph** + **dangling-reference gate** (pure stdlib, reuses ref_lib/config_index/xlsx_dump).
 
-扫项目所有设计文件,抽**结构化**引用(R 编号 / 表[主键] / proto import),给出:
-  - 每文件「→ 引用」:它引用了谁(及该符号定义在哪)
-  - 每文件「← 被引」:谁引用了"本文件定义的符号" = **改本文件的影响集**
+Scans all design files in a project, extracts **structured** references (R-codes / Table[primary key] / proto import), and gives:
+  - per file "-> references": who it references (and where that symbol is defined)
+  - per file "<- referenced by": who references "the symbols this file defines" = **the impact set of changing this file**
 
-纪律:**正向引用是真源,反向索引实时算、绝不落盘**(派生不存 → 永不漂移)。"被引用"可**展示**在生成文件
-`refs.md` 里(顶部标 DO-NOT-EDIT、每次全量覆盖),但**绝不手写进**规则/配置说明/manifest 等真源文档。
+Discipline: **forward references are the source of truth; the reverse index is computed live and never persisted** (nothing derived is stored -> never drifts). "Referenced by" may be **displayed** in the generated file
+`refs.md` (marked DO-NOT-EDIT at the top, fully overwritten each run), but is **never hand-written into** source-of-truth docs like rules/config-spec/manifest.
 
-    python ref_graph.py <项目根> [--out refs.md] [--who-refs <符号>] [--check] [--json]
+    python ref_graph.py <project root> [--out refs.md] [--who-refs <symbol>] [--check] [--json]
 
-  --out      生成双向图到文件(纯产物,勿手改;不传则只在终端给摘要)
-  --who-refs 查单个符号(R 编号 / 表名 / x.proto)的影响集:定义在哪 + 被谁引用
-  --check    悬空引用门禁:R 编号/proto 悬空 = major → 退出码 1(进 CI);表悬空只 advisory(语法可能误命中 array 记法)
-  --json     机读输出
+  --out      generate the bidirectional graph to a file (pure artifact, do not hand-edit; if omitted, only a terminal summary is shown)
+  --who-refs query a single symbol (R-code / table name / x.proto) impact set: where it is defined + who references it
+  --check    dangling-reference gate: dangling R-code/proto = major -> exit code 1 (for CI); a dangling table is only advisory (the grammar may falsely match array notation)
+  --json     machine-readable output
 
-只认结构化令牌、不做散文模糊匹配——所以**不报"图变了"**(那会变成提交生成物的跑步机),只报真错(悬空/定义点撞车)。
+Only structured tokens are recognized, no fuzzy prose matching -- so it **never reports "the graph changed"** (that would turn it into a treadmill of committing generated artifacts), only real errors (dangling / definition-point collision).
 """
 import os, sys, json, argparse
 
@@ -24,7 +24,7 @@ import ref_lib
 
 
 def build(root):
-    """扫描 → 符号定义表 + 反向索引(who-refs)。"""
+    """Scan -> symbol definition table + reverse index (who-refs)."""
     texts, xlsxs = ref_lib.discover_files(root)
     rule_def, table_def, proto_files, file_scan = {}, {}, {}, {}
     for p in texts:
@@ -38,7 +38,7 @@ def build(root):
         for t in ref_lib.xlsx_tables(x):
             table_def.setdefault(t, []).append(x)
 
-    who_rule, who_table, who_proto = {}, {}, {}        # 反向索引(实时算,不落盘)
+    who_rule, who_table, who_proto = {}, {}, {}        # reverse index (computed live, not persisted)
     for p, sc in file_scan.items():
         for r in sc["rule_refs"]:
             who_rule.setdefault(r, []).append(p)
@@ -58,33 +58,33 @@ def _rel(g, p):
 
 
 def dangling(g):
-    """悬空 / 定义点撞车 findings。R 编号·proto = major;表 = advisory(语法可能误命中 array 记法)。"""
+    """Dangling / definition-point-collision findings. R-code and proto = major; table = advisory (grammar may falsely match array notation)."""
     out = []
     for r, files in sorted(g["who_rule"].items()):
         if r not in g["rule_def"]:
             out.append({"sev": "major", "kind": "DANGLING_RULE", "sym": r,
-                        "msg": "R 编号 %s 被引用但无任何文件定义它(定义点缺失)" % r,
+                        "msg": "R-code %s is referenced but no file defines it (definition point missing)" % r,
                         "refs": sorted(set(files))})
     for im, files in sorted(g["who_proto"].items()):
         if im not in g["proto_files"]:
             out.append({"sev": "major", "kind": "DANGLING_PROTO", "sym": im,
-                        "msg": 'import "%s" 找不到对应 .proto 文件' % im,
+                        "msg": 'import "%s" cannot find a matching .proto file' % im,
                         "refs": sorted(set(files))})
     for t, files in sorted(g["who_table"].items()):
         if t not in g["table_def"]:
             out.append({"sev": "advisory", "kind": "DANGLING_TABLE", "sym": t,
-                        "msg": "表引用 %s[…] 无对应 xlsx 表([推断];也可能是 array 记法误命中,需人核)" % t,
+                        "msg": "table reference %s[...] has no matching xlsx table ([inferred]; may also be a false match against array notation, needs human review)" % t,
                         "refs": sorted(set(files))})
     for r, defs in sorted(g["rule_def"].items()):
         if len(set(defs)) > 1:
             out.append({"sev": "advisory", "kind": "DUP_DEF", "sym": r,
-                        "msg": "R 编号 %s 在多处呈定义点(应唯一定义),需人核" % r,
+                        "msg": "R-code %s appears as a definition point in multiple places (should be uniquely defined), needs human review" % r,
                         "refs": sorted(set(defs))})
     return out
 
 
 def who_refs(g, sym):
-    """某符号(R 编号 / 表名 / x.proto)的影响集:定义在哪 + 被哪些文件引用。"""
+    """A symbol's (R-code / table name / x.proto) impact set: where it is defined + which files reference it."""
     defined = []
     if sym in g["rule_def"]:
         defined = sorted(set(g["rule_def"][sym]))
@@ -99,13 +99,13 @@ def who_refs(g, sym):
 
 
 def file_view(g, path):
-    """一个文件的 (正向引用列表, 本文件定义的符号集, 被引{文件: [经哪些符号]})。"""
+    """A file's (forward reference list, set of symbols this file defines, referenced-by {file: [via which symbols]})."""
     sc = g["file_scan"].get(path, {})
     forward = []
     for r in sorted(sc.get("rule_refs", set())):
         forward.append(("R", r, g["rule_def"].get(r, [])))
     for t in sorted(sc.get("table_refs", set())):
-        forward.append(("表", t, g["table_def"].get(t, [])))
+        forward.append(("table", t, g["table_def"].get(t, [])))
     for im in sorted(sc.get("proto_imports", set())):
         forward.append(("proto", im, [g["proto_files"][im]] if im in g["proto_files"] else []))
 
@@ -127,35 +127,35 @@ def file_view(g, path):
 
 
 def render_md(g):
-    """双向图 → 生成式 markdown(纯产物,勿手改)。"""
-    L = ["<!-- GENERATED by ref_graph.py — DO NOT EDIT. 重跑生成,勿手改;反向索引是派生物,改文档后重跑即可。 -->",
-         "# 引用图(双向)", "",
-         "> 正向引用是真源;本表「← 被引」为实时计算的派生物。改了文档跑 `ref_graph.py <根> --out <本文件>` 重生成。", ""]
+    """Bidirectional graph -> generated markdown (pure artifact, do not hand-edit)."""
+    L = ["<!-- GENERATED by ref_graph.py -- DO NOT EDIT. Regenerate by re-running, do not hand-edit; the reverse index is derived, just re-run after editing docs. -->",
+         "# Reference graph (bidirectional)", "",
+         "> Forward references are the source of truth; the \"<- referenced by\" column below is a live-computed derivative. After editing docs, run `ref_graph.py <root> --out <this file>` to regenerate.", ""]
     for p in sorted(set(g["texts"]) | set(g["xlsxs"])):
         fwd, _defined, back = file_view(g, p)
         L.append("## " + _rel(g, p))
         if fwd:
-            L.append("  → 引用:")
+            L.append("  -> references:")
             for kind, sym, dfn in fwd:
-                tgt = ("  → " + ", ".join(_rel(g, d) for d in dfn)) if dfn else "  ⚠悬空"
+                tgt = ("  -> " + ", ".join(_rel(g, d) for d in dfn)) if dfn else "  !dangling"
                 L.append("      [%s] %s%s" % (kind, sym, tgt))
         if back:
-            L.append("  ← 被引(改本文件的影响集):")
+            L.append("  <- referenced by (impact set of changing this file):")
             for f, syms in sorted(back.items()):
-                L.append("      %s  (经 %s)" % (_rel(g, f), ", ".join(sorted(syms))))
+                L.append("      %s  (via %s)" % (_rel(g, f), ", ".join(sorted(syms))))
         if not fwd and not back:
-            L.append("  (无结构化引用)")
+            L.append("  (no structured references)")
         L.append("")
     return "\n".join(L)
 
 
 def main(argv):
-    ap = argparse.ArgumentParser(description="设计文件双向引用图 + 悬空引用门禁")
-    ap.add_argument("root", help="项目根目录")
-    ap.add_argument("--out", help="生成双向图到此文件(纯产物,勿手改)")
-    ap.add_argument("--who-refs", dest="who", help="查单个符号(R 编号/表名/x.proto)的影响集")
-    ap.add_argument("--check", action="store_true", help="悬空门禁:R 编号/proto 悬空→退出码 1")
-    ap.add_argument("--json", action="store_true", help="机读输出")
+    ap = argparse.ArgumentParser(description="Design-file bidirectional reference graph + dangling-reference gate")
+    ap.add_argument("root", help="project root directory")
+    ap.add_argument("--out", help="generate the bidirectional graph to this file (pure artifact, do not hand-edit)")
+    ap.add_argument("--who-refs", dest="who", help="query a single symbol (R-code/table name/x.proto) impact set")
+    ap.add_argument("--check", action="store_true", help="dangling gate: dangling R-code/proto -> exit code 1")
+    ap.add_argument("--json", action="store_true", help="machine-readable output")
     a = ap.parse_args(argv)
     g = build(a.root)
 
@@ -164,13 +164,13 @@ def main(argv):
         if a.json:
             print(json.dumps(res, ensure_ascii=False, indent=2))
             return 0
-        print("符号: " + a.who)
-        print("  定义于: " + (", ".join(_rel(g, d) for d in res["defined_in"]) or "(无 → 悬空)"))
-        print("  被引用于(改它的影响集):")
+        print("symbol: " + a.who)
+        print("  defined in: " + (", ".join(_rel(g, d) for d in res["defined_in"]) or "(none -> dangling)"))
+        print("  referenced in (impact set of changing it):")
         for f in res["referenced_in"]:
             print("      " + _rel(g, f))
         if not res["referenced_in"]:
-            print("      (无)")
+            print("      (none)")
         return 0
 
     dang = dangling(g)
@@ -178,19 +178,19 @@ def main(argv):
     if a.out:
         with open(a.out, "w", encoding="utf-8") as f:
             f.write(render_md(g))
-        print("已生成 %s(%d 文件)" % (a.out, nfiles))
+        print("generated %s (%d files)" % (a.out, nfiles))
 
     majors = [d for d in dang if d["sev"] == "major"]
     if a.json:
         print(json.dumps({"files": nfiles, "dangling": dang}, ensure_ascii=False, indent=2))
     elif dang:
-        print("引用问题(%d;major %d):" % (len(dang), len(majors)))
+        print("reference issues (%d; major %d):" % (len(dang), len(majors)))
         for d in dang:
             print("  [%s] %s  %s" % (d["sev"], d["kind"], d["msg"]))
             for r in d["refs"][:6]:
-                print("        ← " + _rel(g, r))
+                print("        <- " + _rel(g, r))
     else:
-        print("扫描 %d 文件,无悬空/撞车引用(通过)" % nfiles)
+        print("scanned %d files, no dangling/collision references (passed)" % nfiles)
 
     return 1 if (a.check and majors) else 0
 

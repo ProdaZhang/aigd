@@ -1,36 +1,36 @@
-# 实现总纲（脊柱模板）—— 交接包入口（给下游开发 AI 的 start here）
+# Implementation Overview (Spine Template) — Handoff-package Entry Point (the "start here" for the downstream development AI)
 
-> 下游 AI / 工程团队克隆本仓库后,**从这份读起**。本包产出**平台无关**的"规则 + 契约 + 配置 + 验收";选技术栈实现是下游的事。
+> After the downstream AI / engineering team clones this repo, **read this first**. This package produces **platform-agnostic** "rules + contracts + config + acceptance"; picking a tech stack to implement them is the downstream's job.
 
-## 这是什么游戏
-`<一句话>` —— 详见 `项目档案.md`。
+## What Game Is This
+`<one line>` — see `project-charter.md` for details.
 
-## 建造顺序（依赖驱动）
-> 按 manifest 依赖图给出推荐实现顺序;公共类型 / 共享表先。
+## Build Order (dependency-driven)
+> Gives the recommended implementation order per the manifest dependency graph; common types / shared tables first.
 1. `<S0x …>`
 2. `…`
 
-## 各系统在哪（指向 manifest 跨层索引）
-- 系统清单 + 状态 + 跨层索引:**`manifest.md`**(先读它)
-- 规则(行为,挂 R-编号):`docs/系统/<…>/rules.md`
-- 契约:`proto/`(common + 各系统;统一号段)
-- 配置:`config/source/`(表 + 配置说明;含 LocalizationText)
-- 验收(完成定义):`<…>-05acceptance.md`(Gherkin)+ 策划版清单
+## Where Each System Lives (points to the manifest cross-layer index)
+- System inventory + status + cross-layer index: **`manifest.md`** (read it first)
+- Rules (behavior, carrying R-codes): `docs/systems/<…>/rules.md`
+- Contracts: `proto/` (common + each system; unified ranges)
+- Config: `config/source/` (tables + config spec; includes LocalizationText)
+- Acceptance (definition of done): `<…>-05acceptance.md` (Gherkin) + planner-facing checklist
 
-## 怎么算"实现对了"
-- 以**验收用例**为完成定义(断言用 proto 字段 + `表[主键].字段`)。
-- 跨系统:`规范/全局集成验收.md`(冒险 / 最小可玩循环)。
+## How to Tell "It's Implemented Correctly"
+- Use the **acceptance cases** as the definition of done (assertions use proto fields + `table[primary-key].field`).
+- Cross-system: `specs/global-integration-acceptance.md` (adventure / minimal playable loop).
 
-## 全局真源
-- 枚举字典 / 编号登记 / 量纲约定 / 视觉规范:`规范/`
-- 配置共享真源:`config/source/`(item / base / property / LocalizationText…)
+## Global Sources of Truth
+- Enum dictionary / code registry / unit conventions / visual spec: `specs/`
+- Config shared sources of truth: `config/source/` (item / base / property / LocalizationText…)
 
-## 边缘情况处理原则（设计未覆盖时的默认兜底)
-1. 两个系统规则冲突 → 以**依赖图上游系统**的规则为准(上游约束下游)。
-2. 数值边界(0 / 负数 / 极大值)→ 默认 **clamp**,并在代码加 warn 日志。
-3. 设计未覆盖的玩家操作 → **拒绝 + 日志**,不要静默允许。
-4. 发现设计未覆盖的**合理**操作 → 反哺回设计端,标 `[待确认]`(别就地拍死)。
+## Edge-case Handling Principles (default fallbacks when the design doesn't cover something)
+1. Two systems' rules conflict → defer to the rules of the **upstream system on the dependency graph** (upstream constrains downstream).
+2. Numeric boundaries (0 / negative / extreme values) → default to **clamp**, and add a warn log in the code.
+3. A player action the design doesn't cover → **reject + log**, do not silently allow.
+4. Discover a **reasonable** action the design doesn't cover → feed it back to the design side, mark it `[TBD]` (don't kill it off on the spot).
 
-## 状态与边界
-- 系统状态见 manifest(草稿 / 试玩中 / 定稿 / 待重验);**只实现已定稿系统**,草稿系统可能还会变,`待重验` 系统需先确认。
-- 边界:本包到"交接物"为止;客户端 / 服务端代码由下游按选定技术栈实现。
+## Status and Boundaries
+- System statuses are in the manifest (Draft / Playtesting / Final / Recheck); **only implement finalized systems**, draft systems may still change, and `Recheck` systems need confirmation first.
+- Boundary: this package stops at the "handoff artifacts"; client / server code is implemented by the downstream per the chosen tech stack.

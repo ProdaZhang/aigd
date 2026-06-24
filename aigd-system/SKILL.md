@@ -1,30 +1,30 @@
 ---
 name: aigd-system
-description: AIGD 阶段2 · 单系统设计(讨论驱动)。当要把某个系统做出来——规则(-01,挂R编号)、配置表(带测试数据)、系统 html 原型时使用。源 xlsx 可选(给了就读、没给靠访谈)。是 aigd 包的一员;完整方法论见 ../aigd/references/methodology.md。
+description: AIGD Phase 2 · single-system design (discussion-driven). Use this when you want to build out a system — rules (-01, tagged with R-numbers), config table (with test data), system html prototype. The source xlsx is optional (read it if given, otherwise rely on interview). Part of the aigd package; full methodology in ../aigd/references/methodology.md.
 ---
 
-# AIGD · system(单系统设计)　[最小骨架]
+# AIGD · system (single-system design)　[minimal skeleton]
 
-> **包契约**:`aigd` 整包安装(编排器 `aigd/`+`references/` 与 6 子 skill(含 aigd-ui-capture)同级放于本环境的 skills 目录,随宿主 agent,如 Claude Code 的 `.claude/skills/`),**勿单拷本 skill**——正文 `../aigd/references/` 依赖同级 `aigd/`,单独拷会断链。
+> **Package contract**: install the whole `aigd` package (the orchestrator `aigd/`+`references/` and the 6 sub-skills (including aigd-ui-capture) placed at the same level in this environment's skills directory, following the host agent, e.g. Claude Code's `.claude/skills/`), **don't copy this skill alone** — the body's `../aigd/references/` depends on `aigd/` at the same level, copying it alone breaks the link.
 
-## 定位
-阶段 2。每系统一遍。**只产"便宜、迭代期会改"的三样**:规则 / 配置(测试数据) / 系统原型。
-**接口契约 / 验收用例 / 后端算法不在本阶段**——推迟到 `aigd-handoff`(定稿后)生,避免设计还在变就锁死、白 churn。
+## Positioning
+Phase 2. One pass per system. **Produces only the three "cheap, will-change-during-iteration" things**: rules / config (test data) / system prototype.
+**Interface contract / acceptance cases / backend algorithms are not in this phase** — deferred to `aigd-handoff` (after finalization), to avoid locking things down while the design is still changing and wasting churn.
 
-## 读 / 产 / 写回
-- **读**:`manifest` 该系统条目(依赖、引用的共享真源)、`项目档案`;`../aigd/references/methodology.md`(以它为准)。
-- **产** —— 下方路径为工程化布局示例,**实际目录/文件名以 `项目档案『目录布局・命名规范』` 为准**(与 manifest 跨层索引同源):
-  - `docs/系统/<系统>/rules.md`(-01,挂 R-编号,散文无裸数值)。
-  - `config/source/<表>.xlsx`(**带测试数据**)+ 配置说明。
-  - `docs/prototypes/<系统>.html`(单文件零依赖可点;示意数据与配置对量)。
-- **写回**:`manifest` 该系统跨层索引 + 状态=草稿;新枚举 / R-编号就地登记到全局规范。
+## Read / produce / write back
+- **Read**: this system's entry in the `manifest` (dependencies, referenced shared sources of truth), the `project charter`; `../aigd/references/methodology.md` (it is authoritative).
+- **Produce** — the paths below are an engineering-layout example, **the actual directories/filenames defer to the `project charter"directory layout · naming conventions"`** (same source as the manifest cross-layer index):
+  - `docs/systems/<system>/rules.md` (-01, tagged with R-numbers, prose with no bare numerals).
+  - `config/source/<table>.xlsx` (**with test data**) + config spec.
+  - `docs/prototypes/<system>.html` (single file, zero-dependency, clickable; illustrative data on the same scale as the config).
+- **Write back**: this system's cross-layer index in the `manifest` + Status = Draft; new enums / R-numbers registered in place into the global spec.
 
-## 方法论
-**以 `../aigd/references/methodology.md` 为准**(本骨架不复制)。务必记住:契约/验收/后端归 handoff,本阶段不产。
+## Methodology
+**Defers to `../aigd/references/methodology.md`** (this skeleton does not copy it). Be sure to remember: contract / acceptance / backend belong to handoff, not produced in this phase.
 
-## 准入 / 准出
-- **准入**:manifest 该系统状态=`草稿`,且其**所有依赖系统至少 `草稿`**(否则缺底图,先回 concept 补)。
-- **准出**:rules.md + 配置表(测试数据) + 系统原型.html 齐、manifest 跨层索引已写 → 转 `aigd-iterate`。
+## Admission / exit
+- **Admission**: this system's status in the manifest = `Draft`, and **all its dependency systems are at least `Draft`** (otherwise the base map is missing, go back to concept to fill it in first).
+- **Exit**: rules.md + config table (test data) + system prototype.html complete, manifest cross-layer index written → move to `aigd-iterate`.
 
-## 边界
-不锁契约、不写验收、不做平衡(数值填测试值即可,深度平衡是包外工种)。
+## Boundary
+Doesn't lock the contract, doesn't write acceptance, doesn't do balancing (filling in test values for numbers is enough; deep balancing is an out-of-package discipline).

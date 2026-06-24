@@ -1,182 +1,182 @@
-# 界面 DSL 规范（截图知识库 · 工具链契约）
+# UI DSL Spec (screenshot knowledge base · toolchain contract)
 
-> 一套描述"界面屏结构"的纯文本 DSL：**工具1**(捕获 skill,看图填)写它、**工具2**(`ui_render.py`)渲染它、**工具3**(`ui_slice.py`,按框切图)消费它。
-> **一套 DSL 两用**：自家设计(有真配置表)与竞品捕获(无真数据)——靠"来源语义"区分。
-> 本文是**权威**;文法必须与 `references/scripts/ui_render.py` 的 `parse_dsl` 保持一致(改文法先改解析器并跑测试)。
+> A plain-text DSL describing "UI screen structure": **tool 1** (the capture skill, fill it in by looking at an image) writes it, **tool 2** (`ui_render.py`) renders it, **tool 3** (`ui_slice.py`, slices an image by boxes) consumes it.
+> **One DSL, two uses**: own design (has a real config table) and competitor capture (no real data) — distinguished by "source semantics."
+> This document is **authoritative**; the grammar must stay in sync with `parse_dsl` in `references/scripts/ui_render.py` (to change the grammar, change the parser first and run the tests).
 
-## 1. 文件骨架
+## 1. File skeleton
 
 ```
-# 屏ID · 来源 · 屏名
+# screenID · source · screenName
 
-> 用途: …
-> 布局模式: …            # 检索面:同类参考靠它匹配
-> 标签: #tagA #tagB
-> 来源: <游戏/自家> / <日期> / 原图弃
+> Purpose: …
+> Layout pattern: …      # retrieval facet: similar references are matched by it
+> Tags: #tagA #tagB
+> Source: <game/own> / <date> / original image discarded
 
-## 配色板                # 可选提示(散文,仅作语义参考)
-<一段配色描述,含若干 #RRGGBB>
+## Palette               # optional hint (prose, semantic reference only)
+<a palette description, containing several #RRGGBB>
 
-## Layout                # 元素树(可包在 ``` 围栏里)
-<每元素一行,见 §2>
+## Layout                # element tree (can be wrapped in a ``` fence)
+<one element per line, see §2>
 
-## Events                # 交互(可包在 ``` 围栏里)
-<触发 元素 [守卫] -> 结果/目标>
+## Events                # interactions (can be wrapped in a ``` fence)
+<trigger element [guard] -> result/target>
 
-## 皮肤                  # 可选,结构化配色(id 或 类型 → 色),与结构分离,见 §9
-<id或类型  #填充[/#文字]>
+## Skin                  # optional, structured coloring (id or type → color), separated from structure, see §9
+<id-or-type  #fill[/#text]>
 
-## 设计点评              # 可选,检索面:布局模式/洞察
+## Notes                 # optional, retrieval facet: layout pattern / insights
 - …
 ```
 
-- 段标题按**关键词前缀**识别(`## Layout (……)` 也认);标题后可带括号说明。
-- `## Layout` / `## Events` 内容可用 ```` ``` ```` 围栏包裹(围栏行被解析器跳过)。
-- `> …` 引用行、`设计点评` 段**不参与渲染**(纯检索面)。
+- Section headings are recognized by **keyword prefix** (`## Layout (……)` also matches); the heading may carry a parenthetical note.
+- `## Layout` / `## Events` content may be wrapped in a ```` ``` ```` fence (fence lines are skipped by the parser).
+- `> …` quote lines and the `Notes` section **do not participate in rendering** (pure retrieval facet).
 
-## 2. Layout 行文法（权威）
+## 2. Layout-line grammar (authoritative)
 
 ```
-名称 [:id] [类型] @{x y w h} [z=N] [形=形状] [[态]] [×N] ["文本"]
+name [:id] [type] @{x y w h} [z=N] [shape=shapeName] [[state]] [×N] ["text"]
 ```
 
-| 部件 | 说明 | 必填 |
+| Part | Description | Required |
 |------|------|------|
-| 名称 | 中文短名(显示标签/槽名) | 是 |
-| `:id` | 跨引用/事件用;可紧跟类型无空格(`:back[按钮]`) | 否 |
-| `[类型]` | `@{` **之前**的方括号 = 类型;见 §3 类型表;变体用 `·`(如 `按钮·主`) | 是 |
-| `@{x y w h}` | **百分比** bbox(0–100,相对屏,原点左上) | 是 |
-| `z=N` | 分层。**可选**:标了就按它叠;不标按 (缩进, 文档顺序) 兜底(见 §4) | 否 |
-| `形=圆` | 形状,默认方角;圆/方是**结构属性**(见 §5) | 否 |
-| `[态]` | `@{` **之后**的方括号 = 状态(选中/锁/禁用…) | 否 |
-| `×N` | 重复个数 | 否 |
-| `"文本"` | 元素文字内容 | 否 |
+| name | short Chinese name (display label / slot name) | yes |
+| `:id` | for cross-reference/events; may directly follow the type with no space (`:back[button]`) | no |
+| `[type]` | the bracket **before** `@{` = type; see the §3 type table; variants use `·` (e.g. `button·primary`) | yes |
+| `@{x y w h}` | **percentage** bbox (0–100, relative to screen, origin top-left) | yes |
+| `z=N` | layering. **Optional**: if tagged, stack by it; if not, fall back to (indent, document order) (see §4) | no |
+| `shape=circle` | shape, default rectangular corners; circle/rectangle are **structural attributes** (see §5) | no |
+| `[state]` | the bracket **after** `@{` = state (selected/locked/disabled…) | no |
+| `×N` | repeat count | no |
+| `"text"` | the element's text content | no |
 
-> **配色不写在元素行里**——皮肤与结构分离,集中到 `## 皮肤` 段(见 §9),整段可换可删。
-> **行首缩进 = 嵌套层级**(子元素缩进更深);无 z 时它参与分层兜底(见 §4)。
-> 解析规则:`@{}` 把行切成 pre/post;pre 里取 `:id` 与首个 `[类型]`,post 里取 `z=` / `形=` / 首个 `[态]` / `"文本"`。无 `@{}` 的行(标题/注释)跳过。
+> **Coloring is not written on the element line** — skin and structure are separated, gathered into the `## Skin` section (see §9); the whole section can be swapped or deleted.
+> **Leading indent of a line = nesting level** (child elements are more deeply indented); without z it participates in the layering fallback (see §4).
+> Parsing rule: `@{}` splits the line into pre/post; in pre, take the `:id` and the first `[type]`; in post, take `z=` / `shape=` / the first `[state]` / `"text"`. Lines with no `@{}` (headings/comments) are skipped.
 
-## 3. 类型表（= 槽类型,可换自己素材）
+## 3. Type table (= slot types, swap in your own assets)
 
-`容器` / `面板` / `按钮` / `文本` / `图标槽` / `背景槽` / `立绘槽` / `数值条` / `装饰` / `chrome`(窗口边框等非游戏 UI)。
+`container` / `panel` / `button` / `text` / `iconSlot` / `bgSlot` / `artSlot` / `valueBar` / `decoration` / `chrome` (window frames and other non-game UI).
 
-- 渲染器按类型给**通用皮肤**(L1)与线框色;`图标槽/背景槽/立绘槽` = 美术占位,留空换素材;`数值条` 画进度条(文本含 `X/Y` 则按比例)。
-- 类型不在表内 → 回退到 `·` 前的基础类型,再不行按"未知"。
+- The renderer gives each type a **generic skin** (L1) and a wireframe color; `iconSlot/bgSlot/artSlot` = art placeholders, left empty to swap in assets; `valueBar` draws a progress bar (if the text contains `X/Y`, it's proportional).
+- Type not in the table → fall back to the base type before `·`, and failing that, to "unknown."
 
-## 4. 分层（z）—— z 优先，否则按缩进+文档顺序
+## 4. Layering (z) — z first, otherwise by indent + document order
 
-排序键 = **`z 优先;无 z 则按 (缩进深度, 文档顺序)`**,从低到高叠放(低在底)。
+The sort key = **`z first; without z, by (indent depth, document order)`**, stacked low to high (low at the bottom).
 
-- **标了 `z=N`**:按它叠。显式 z **永远压过**缩进兜底。
-- **没标 z**:按**行首缩进深度**叠(子元素缩进更深 → 叠在父容器上);同缩进按**文档顺序**(后写的在上)。缩进是**结构信息、不是几何**——守住下面这条硬原则。
-- **硬原则**:渲染器**只按声明的 z / 缩进画,绝不从纵横比、谁全屏、谁套谁等几何去猜层级**。
-- **何时该补 z**:有**全屏背景**或元素**重叠**时给 z(背景 `@{0 0 100 100} z=1`),否则中途声明的底图会盖住前面;层级平铺的草稿可不标。
-- **混用注意**:同屏既有 z 又有无 z 时,无 z 元素的层 = 其缩进深度,可能和 z 阶梯对不齐——要混就把那屏 z 标全。
-- **推荐阶梯**:背景 = 1 · 面板/容器 = 3–4 · 容器内普通元素 = 4–5 · 交互(按钮/数值条/节点)= 6 · 浮层/弹窗 = 7–8 · chrome = 9。
-- **强弱口径**:**捕获 skill(工具1)仍要求每元素标 z**(在抄真图、层级要记全);**讨论态 DSL 可省 z**(早期排结构),渲染器一律不因缺 z 报错,`validate()` 只提醒。
+- **If `z=N` is tagged**: stack by it. An explicit z **always overrides** the indent fallback.
+- **If z is not tagged**: stack by **leading-indent depth** (child elements are more deeply indented → stacked on top of the parent container); same indent stacks by **document order** (later-written on top). Indent is **structural information, not geometry** — uphold the hard principle below.
+- **Hard principle**: the renderer **draws only by the declared z / indent, and never guesses layering from aspect ratio, who's fullscreen, who nests whom, or other geometry**.
+- **When to add z**: add z when there's a **fullscreen background** or when elements **overlap** (background `@{0 0 100 100} z=1`), otherwise a base image declared mid-stream will cover what precedes it; a flat-layered draft can skip it.
+- **Mixing caution**: when a screen has both z-tagged and non-z elements, a non-z element's layer = its indent depth, which may not align with the z ladder — if you mix, tag z fully on that screen.
+- **Recommended ladder**: background = 1 · panel/container = 3–4 · ordinary elements inside a container = 4–5 · interactive (button/valueBar/node) = 6 · overlay/popup = 7–8 · chrome = 9.
+- **Strong/weak convention**: the **capture skill (tool 1) still requires z on every element** (when copying a real image, layering must be fully recorded); **discussion-mode DSL may omit z** (early structure sketching). The renderer never errors on missing z; `validate()` only reminds.
 
-## 5. 形状（形=）—— 结构属性,声明才生效
+## 5. Shape (shape=) — a structural attribute, takes effect only when declared
 
-- `形=圆`(或 `圆形`/`circle`)→ 渲染成圆/胶囊;**默认方角**。
-- 圆/方影响"你把自己素材塞进槽"的形态,属结构信息,**由工具1 读图时声明**;渲染器**不靠纵横比猜**。
+- `shape=circle` (or `circle`) → rendered as a circle/capsule; **default rectangular corners**.
+- Circle/rectangle affects the form of "the asset you drop into the slot," which is structural information, **declared by tool 1 when reading the image**; the renderer **does not guess from aspect ratio**.
 
-## 6. 来源语义（竞品库可信度,关键）
+## 6. Source semantics (competitor-library credibility, key)
 
-- `:真源 表[主键].字段` —— **自家设计**,背后有真配置表;
-- `:观测 …` —— **竞品**图里**肉眼可读**的(文本/配色/布局),是事实;
-- `:推断 …` —— **竞品**的**数据结构/源表猜测**,是假设。
+- `:canonical table[primaryKey].field` — **own design**, backed by a real config table;
+- `:observed …` — what is **visually readable** in a **competitor** image (text/coloring/layout), a fact;
+- `:inferred …` — a guess at a **competitor**'s **data structure / source table**, a hypothesis.
 
-**禁止把竞品 `:推断` 当 `:真源`**——否则知识库里的猜测会污染后续设计。
+**Never treat a competitor's `:inferred` as `:canonical`** — otherwise guesses in the knowledge base will contaminate later designs.
 
-> 结构捕获**不必给每个观测文本逐元素标 `:观测`**(文本写下来本身就是观测);**只有当你写出"推断的数据结构 / 源表"时才标 `:推断`**。竞品 DSL 在屏头 `> 来源` 里注一句"数据均为观测、无真源"即可。
+> Structure capture **need not tag each observed text element with `:observed`** (writing the text down is itself an observation); **tag `:inferred` only when you write out an "inferred data structure / source table."** A competitor DSL just needs one note in the screen header's `> Source` saying "all data is observed, no canonical source."
 
-## 7. 看图配方（工具1 的固定顺序,降低颗粒度漂移）
+## 7. Image-reading recipe (tool 1's fixed order, to reduce granularity drift)
 
-1. **屏头**:屏ID / 来源 / 用途 / 布局模式 / 标签。
-2. **配色板**(可选):主色 + 几个 `#RRGGBB`。
-3. **Layout,从外到内、从上到下**:
-   a. 先**容器/面板**(给较低 z),再其**子元素/叶子**(给更高 z);
-   b. 每元素**必给** 名称 + `[类型]` + `@{x y w h}` + `z=N`;按需补 `形=` / `[态]` / `×N` / `"文本"`;
-   c. **全屏底图** = `@{0 0 100 100} z=1`;
-   d. 圆形元素(头像/节点/徽章)标 `形=圆`;选中/锁等标 `[态]`。
-4. **几何**:目测百分比 bbox,**不必像素准**——交给 `ui_render.py` 的「校准」拖拽微调、导出回 md。
-5. **Events**:`触发 元素 [守卫] -> 结果/目标`。
-6. **来源**:竞品数据一律 `:观测`/`:推断`,绝不写成 `:真源`。
-7. **设计点评**(可选):布局模式、正负分区、视觉重心等洞察。
+1. **Screen header**: screenID / source / purpose / layout pattern / tags.
+2. **Palette** (optional): main color + a few `#RRGGBB`.
+3. **Layout, outside-in, top-to-bottom**:
+   a. First the **container/panel** (give it a lower z), then its **children/leaves** (give them a higher z);
+   b. For each element **always give** name + `[type]` + `@{x y w h}` + `z=N`; add `shape=` / `[state]` / `×N` / `"text"` as needed;
+   c. **Fullscreen base image** = `@{0 0 100 100} z=1`;
+   d. Tag circular elements (avatars/nodes/badges) with `shape=circle`; tag selected/locked etc. with `[state]`.
+4. **Geometry**: eyeball the percentage bbox, **no need to be pixel-accurate** — leave it to the "calibrate" drag fine-tuning of `ui_render.py`, which exports back to md.
+5. **Events**: `trigger element [guard] -> result/target`.
+6. **Source**: competitor data is uniformly `:observed`/`:inferred`, never written as `:canonical`.
+7. **Notes** (optional): insights such as layout pattern, positive/negative zoning, visual focus.
 
-**粒度规则**:一个"可独立点击 / 可换素材 / 承载一条独立信息"的视觉块 = 一个元素;纯分组用容器包。拿不准就**宁可拆细**(容器 + 子元素),别把一片塞成一个。
+**Granularity rule**: one visual block that "can be clicked independently / can have its asset swapped / carries one independent piece of information" = one element; pure grouping is wrapped with a container. When in doubt, **prefer splitting finer** (container + children), don't cram a whole region into one element.
 
-## 8. 跑通(与工具链)
+## 8. Getting it running (with the toolchain)
 
-本 DSL 有**两个入口**,共用同一渲染器:
-
-```
-入口1 找截图 ─[工具1 捕获 skill]─► <屏ID>.md ─► ui_render ─► html/svg ─► 入库 patterns/
-入口2 aigd 讨论 ─► 规则 ─► <屏ID>.md ───────────► ui_render ─► html(套主题皮肤)试玩
-```
+This DSL has **two entry points**, sharing the same renderer:
 
 ```
-python ui_render.py <屏ID>.md <out>.html --svg <out>.svg [--skin theme.skin.json]
-   │  无 z 不报错(缩进/文档序兜底);缺 z 仅提醒——捕获入库前宜补全
-   ▼  出 html(L0线稿/L1皮肤/L2氛围 + 校准) + svg 快照;眼比原图 → 校准微调导回 md
+entry 1 find screenshot ─[tool 1 capture skill]─► <screenID>.md ─► ui_render ─► html/svg ─► into patterns/
+entry 2 aigd discussion ─► rules ─► <screenID>.md ───────────────► ui_render ─► html (with theme skin) playtest
 ```
 
-样例:随包 `references/ui-dsl-example.md`(合规、可直接渲染);入库后另见 `patterns/界面范式/<游戏>/<屏ID>.md`。本包测试(`scripts/tests/`)用内联 `SAMPLE` + 该随包样例,**不依赖任何项目实例路径**。
-
-**部件切片(工具3 · 可选)**:`ui_slice.py <屏ID>.md <原图> [outdir]` 按 bbox 把原图切成逐元素 png(`形=圆` 加圆形 alpha 蒙版、声明驱动)+ `index.md` 接触表(缩略图 + bbox 表),把竞品界面拆成可参考/可替换素材;`--only 背景槽,立绘槽,图标槽` 只切美术槽。与 `ui_palette.py`(采色,§9)同族:都复用 `parse_dsl`、需 Pillow、确定性。
-
-## 9. 皮肤（配色）—— 与结构分离，可换肤 / 可做主题
-
-**配色不写在元素行里**,集中到 md 的 `## 皮肤` 段(整段可删可换;删了就回退类型默认 L1)。键有两种:
-
 ```
-## 皮肤
-nodeVIII  #ffc2ec / #be69aa     # 按 id —— 精确到具体元素(竞品采样常用)
-按钮      #2b2f3a / #ffffff     # 按 类型 —— 泛化到一类(项目主题/品牌色)
+python ui_render.py <screenID>.md <out>.html --svg <out>.svg [--skin theme.skin.json]
+   │  no z → no error (indent/document-order fallback); missing z only reminds — better to fill in before capture into the library
+   ▼  outputs html (L0 line art / L1 skin / L2 atmosphere + calibrate) + svg snapshot; eyeball vs the original → calibrate-tune, export back to md
 ```
 
-- 格式:`键  #填充[/#文字]`(键在前、色在后)。以 `#` 起头的行视作注释。
-- **查色优先级**:`id` → `类型` → `·` 前基础类型(`按钮·主`→`按钮`)→ 内置 L1 灰。
-- **保留键 `@canvas`**:不对应任何元素,设**画布底色**(html stage / svg 根矩形)+ 无主题元素的默认填充/文字。要出浅色品牌(如 cream)必须设它,否则舞台仍是暗底。
-- **三种来源,统一接口**:
-  - **入口1 竞品采样**:`ui_palette.py <屏ID>.md <原图> --merge` 按 bbox 采每元素主色/文字色,**写成 `## 皮肤` 段(按 id)**(`形=圆` 取中心避免背景主导);之后 `ui_render.py` 渲染该 md 即用真色,**无需 `--skin`**。
-  - **入口2 项目主题风格**:把品牌色**按类型**列一份主题(见示例 `example.skin.json`:`{"按钮":{...},"面板":{...},"背景槽":{...}}`),`ui_render.py <屏ID>.md … --skin <主题.skin.json>` 一传,**任何结构 DSL 都渲染成项目统一风格**;品牌色只维护这一份。
-  - **手写**:直接在 md 的 `## 皮肤` 段写几行。
-- **覆盖**:`--skin` 同键覆盖 md 内 `## 皮肤` 段;更具体的 `id` 优先于 `类型`。
-- 也可 `ui_palette.py … out.skin.json` 出独立 json 模块(不写回 md)。
+Sample: the bundled `references/ui-dsl-example.md` (compliant, directly renderable); after capture into the library, see also `patterns/ui-patterns/<game>/<screenID>.md`. This package's tests (`scripts/tests/`) use an inline `SAMPLE` + that bundled sample, **depending on no project-instance path**.
 
-## 10. 屏/模块与分辨率（非全屏 · 自有尺寸）
+**Part slicing (tool 3 · optional)**: `ui_slice.py <screenID>.md <originalImage> [outdir]` slices the original image by bbox into per-element png (`shape=circle` adds a circular alpha mask, declaration-driven) + an `index.md` contact sheet (thumbnails + bbox table), splitting a competitor UI into reference-able / replaceable assets; `--only bgSlot,artSlot,iconSlot` slices only the art slots. Same family as `ui_palette.py` (color sampling, §9): both reuse `parse_dsl`, need Pillow, deterministic.
 
-屏头 blockquote 可声明 `> 类型:` 与 `> 尺寸:`,渲染器据此定舞台像素(不再写死):
+## 9. Skin (coloring) — separated from structure, re-skinnable / themeable
+
+**Coloring is not written on the element line**, it's gathered into the md's `## Skin` section (the whole section can be deleted or swapped; delete it and it falls back to the type-default L1). Keys are of two kinds:
 
 ```
-> 类型: 模块            # 屏(默认) / 模块
-> 尺寸: 1600×120        # 舞台像素;分隔符 × / x / *
+## Skin
+nodeVIII  #ffc2ec / #be69aa     # by id — precise to a specific element (common for competitor sampling)
+button    #2b2f3a / #ffffff     # by type — generalized to a class (project theme / brand color)
 ```
 
-- **元素 `@{}` 是相对本画布(尺寸)的百分比**;模块可**独立渲染**(舞台 = 模块尺寸)。
-- **分辨率两入口**(UI设计规范 §一,20:9):
-  - **拆截图**:横版锁高=1080、竖版锁宽=1080,另一轴按原图比例 —— 捕获时用 `ui_render.recommend_size(原图W, 原图H)` 算出写进 `> 尺寸`。
-  - **聊设计/自测**:`> 尺寸` 缺省 = **`2400×1080`**(横版手游基准;竖版改写 `1080×2400`)。
+- Format: `key  #fill[/#text]` (key first, color after). A line starting with `#` is treated as a comment.
+- **Color-lookup priority**: `id` → `type` → base type before `·` (`button·primary` → `button`) → built-in L1 gray.
+- **Reserved key `@canvas`**: corresponds to no element, sets the **canvas background color** (html stage / svg root rectangle) + the default fill/text for elements with no theme. It must be set to produce a light-color brand (e.g. cream), otherwise the stage is still a dark base.
+- **Three sources, one unified interface**:
+  - **Entry 1 competitor sampling**: `ui_palette.py <screenID>.md <originalImage> --merge` samples each element's main color / text color by bbox, **written as a `## Skin` section (by id)** (`shape=circle` takes the center to avoid background dominance); afterward `ui_render.py` rendering that md uses the real colors, **without needing `--skin`**.
+  - **Entry 2 project theme style**: list a theme of brand colors **by type** (see the sample `example.skin.json`: `{"button":{...},"panel":{...},"bgSlot":{...}}`), pass `ui_render.py <screenID>.md … --skin <theme.skin.json>` once, and **any structural DSL renders into the project's unified style**; the brand colors are maintained in this one place.
+  - **Hand-written**: just write a few lines in the md's `## Skin` section.
+- **Override**: `--skin` overrides same-keyed entries in the md's `## Skin` section; the more specific `id` takes priority over `type`.
+- You can also do `ui_palette.py … out.skin.json` to output a standalone json module (not written back into md).
 
-## 11. 实例与引用（模块复用）
+## 10. Screen/module and resolution (non-fullscreen · own dimensions)
 
-屏可引用模块、复用其结构。先在 `## 引用` 声明别名→路径,再在 Layout 用 `[实例·别名]` 放置:
+The screen-header blockquote may declare `> Type:` and `> Size:`, by which the renderer sets the stage pixels (no longer hard-coded):
 
 ```
-## 引用
-资源栏 = ui-dsl-example-resourcebar.module.md   # 别名 = 相对路径(相对本屏文件;--modules <dir> 兜底搜)
+> Type: module          # screen (default) / module
+> Size: 1600×120        # stage pixels; separator × / x / *
+```
+
+- **An element's `@{}` is a percentage relative to this canvas (Size)**; a module can be **rendered independently** (stage = module Size).
+- **Two resolution entry points** (UI design spec §I, 20:9):
+  - **Slicing screenshots**: landscape locks height = 1080, portrait locks width = 1080, the other axis follows the original image's ratio — at capture, use `ui_render.recommend_size(origW, origH)` to compute and write into `> Size`.
+  - **Discussion/self-test**: `> Size` default = **`2400×1080`** (landscape mobile baseline; for portrait rewrite to `1080×2400`).
+
+## 11. Instances and references (module reuse)
+
+A screen can reference a module and reuse its structure. First declare alias → path in `## Refs`, then place it in Layout with `[instance·alias]`:
+
+```
+## Refs
+resourceBar = ui-dsl-example-resourcebar.module.md   # alias = relative path (relative to this screen file; --modules <dir> as a fallback search)
 
 ## Layout
-顶部资源栏 :top [实例·资源栏] @{0 0}        z=9   # 默认:原像素放置(不缩放)
-弹窗       :pop [实例·确认框] @{30 30 40 40} z=7   # 可选:contain 缩放进框(保比例居中)
+topResourceBar :top [instance·resourceBar] @{0 0}        z=9   # default: placed at original pixels (no scaling)
+popup          :pop [instance·confirmBox] @{30 30 40 40} z=7   # optional: contain-scaled into the box (centered, aspect preserved)
 ```
 
-- **两种放法**:`@{x y}` = 模块按**自身像素原尺寸**放在 (x,y)(屏占比 = 模块W/屏W、模块H/屏H,**不缩放**);`@{x y w h}` = 按 `object-fit: contain` 等比缩放进框、居中。
-- **展开(flatten)**:渲染/切片前 `resolve()` 把实例换成模块的扁平绝对元素;下游 `ui_render/slice` 不变(`ui_palette` 是捕获工具、不展开)。
-- **id 命名空间**:展开后元素 id = `实例id.模块id`(如 `top.gold`),同模块多次实例化不撞、可追溯。
-- **z 单层**:实例整体落在实例的 z(模块内部 z 只定组内叠放)。
-- **皮肤**:模块自带 `## 皮肤` 在展开时烘到各命名空间 id;屏 `--skin`/主题按类型兜底未上色的。
-- **嵌套**:模块可引用模块,递归展开 + 环检测(循环报错)。
-- **实例校准**:html 顶部「布局」档把实例画成可拖占位框(native 仅拖不缩、contain 可拖可缩)→「导出 DSL」出实例行贴回屏 md;模块内部去模块文件改。
-- CLI:`ui_render.py 屏.md out.html --modules <模块目录>`(模块不在屏旁时)。
+- **Two placement modes**: `@{x y}` = the module is placed at **its own original pixel size** at (x,y) (screen share = moduleW/screenW, moduleH/screenH, **no scaling**); `@{x y w h}` = scaled into the box by `object-fit: contain`, aspect-preserved and centered.
+- **Flatten**: before render/slice, `resolve()` replaces instances with the module's flattened absolute elements; downstream `ui_render/slice` is unchanged (`ui_palette` is a capture tool and does not flatten).
+- **id namespace**: after flattening, an element id = `instanceId.moduleId` (e.g. `top.gold`); multiple instantiations of the same module don't collide and are traceable.
+- **Single z layer**: an instance as a whole lands on the instance's z (the module's internal z only sets the within-group stacking).
+- **Skin**: the module's own `## Skin` is baked onto each namespaced id at flatten time; the screen's `--skin`/theme covers, by type, whatever wasn't colored.
+- **Nesting**: a module can reference a module, recursive flattening + cycle detection (a loop errors out).
+- **Instance calibration**: the html top's "Layout" tier draws the instance as a draggable placeholder box (native: drag only, no scale; contain: drag and scale) → "Export DSL" outputs the instance line to paste back into the screen md; to change the module internals, edit the module file.
+- CLI: `ui_render.py screen.md out.html --modules <moduleDir>` (when the module is not beside the screen).

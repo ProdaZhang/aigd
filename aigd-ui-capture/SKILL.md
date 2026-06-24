@@ -1,58 +1,58 @@
 ---
 name: aigd-ui-capture
-description: AIGD · 界面截图 → 界面 DSL(知识库捕获/工具1)。当要把游戏界面截图(竞品或自家)转成结构化 md(类型/层级/几何/交互/状态),以便 ui_render.py 还原成线框、并攒进 patterns/界面范式 知识库时使用。看图配方与文法的权威在 ../aigd/references/ui-dsl-spec.md;本 skill 只编排流程、不复制文法。是 aigd 包的一员。
+description: AIGD · UI screenshot → UI DSL (knowledge-base capture / tool 1). Use this when you want to turn a game UI screenshot (a competitor's or your own) into structured md (type/hierarchy/geometry/interaction/state), so ui_render.py can restore it to a wireframe and it can be accumulated into the patterns/UI-paradigm knowledge base. The authority for the read-the-image recipe and grammar is in ../aigd/references/ui-dsl-spec.md; this skill only orchestrates the flow, it doesn't duplicate the grammar. Part of the aigd package.
 ---
 
-# 界面截图 → 界面 DSL（工具1 · 捕获器）
+# UI screenshot → UI DSL (tool 1 · capturer)
 
-把一张界面截图读成一份**界面 DSL**(.md):结构 / 类型 / 层级 / 几何 / 交互。它是确定性脚本 `ui_render.py`(工具2 还原)、`ui_slice.py`(工具3 切图)的输入。**本 skill 编排流程,文法/配方一律以 `../aigd/references/ui-dsl-spec.md` 为准**(规范更新无需改本文)。
+Reads a UI screenshot into one **UI DSL** (.md): structure / type / hierarchy / geometry / interaction. It is the input to the deterministic scripts `ui_render.py` (tool 2, restore) and `ui_slice.py` (tool 3, slice). **This skill orchestrates the flow; the grammar / recipe always defers to `../aigd/references/ui-dsl-spec.md`** (no need to change this doc when the spec updates).
 
 ---
 
-## 第 0 步：读真源（每次必做，用 Read，别凭记忆）
+## Step 0: read the source of truth (do every time, use Read, don't go from memory)
 
-| 文件 | 取什么 |
+| File | What to take |
 |------|--------|
-| `../aigd/references/ui-dsl-spec.md` | 文件骨架 + Layout 行文法 + 类型表 + z 分层 + 形状 + 来源语义 + **看图配方(§7)** + **皮肤/主题(§9)** |
-| `../aigd/references/scripts/ui_render.py` | 还原 + 缺 z 提醒 + 校准导出(验证产物用) |
-| `../aigd/references/scripts/ui_palette.py` | 从原图采色 → 写成 `## 皮肤` 段(配色入库用) |
-| `../aigd/references/scripts/ui_slice.py` | 图+DSL → 逐元素切片 + index.md 接触表(拆素材,可选) |
-| `../aigd/references/ui-dsl-example.md` | 一份随包合规 DSL 的形态(示例屏) |
+| `../aigd/references/ui-dsl-spec.md` | File skeleton + Layout-line grammar + type table + z layering + shapes + source semantics + **read-the-image recipe (§7)** + **skin/theme (§9)** |
+| `../aigd/references/scripts/ui_render.py` | Restore + missing-z reminder + calibration export (for verifying the artifact) |
+| `../aigd/references/scripts/ui_palette.py` | Sample colors from the original image → write a `## Skin` section (for adding color schemes to the library) |
+| `../aigd/references/scripts/ui_slice.py` | Image + DSL → per-element slices + index.md contact sheet (extract assets, optional) |
+| `../aigd/references/ui-dsl-example.md` | The shape of one package-compliant DSL (example screen) |
 
-## 第 1 步：确认输入
+## Step 1: confirm the input
 
-要 **一张截图** + `屏ID` + `来源(竞品名/自家)` + 一句 `用途`。缺就问。竞品图默认"原图转完可弃,DSL 入库"。
+Need **one screenshot** + `screen ID` + `source (competitor name / own)` + a one-line `purpose`. Ask if missing. Competitor images default to "discard the original once converted, the DSL goes into the library".
 
-## 第 2 步：按看图配方产 DSL（规范 §7）
+## Step 2: produce the DSL per the read-the-image recipe (spec §7)
 
-严格走规范 §7 的顺序:屏头 → 配色板 → Layout(从外到内/从上到下:先容器后叶子)→ Events → 设计点评。**逐元素必标 `类型 + @{x y w h} + z=N`**(渲染器虽允许省 z,但**捕获入库必须标全**——你在抄真图,层级要记准);圆形标 `形=圆`,选中/锁标 `[态]`,全屏底图 `@{0 0 100 100} z=1`。竞品数据只标 `:观测`/`:推断`,**绝不写 `:真源`**。几何目测百分比即可(精度交给第 3 步校准)。**配色不写进元素行**——第 3 步用 `ui_palette.py --merge` 采色写成 `## 皮肤` 段(规范 §9)。
+Strictly follow the order of spec §7: screen header → palette → Layout (outer to inner / top to bottom: containers before leaves) → Events → design review. **Every element must be tagged `type + @{x y w h} + z=N`** (the renderer allows omitting z, but **capture into the library must tag it fully** — you're transcribing a real image, the hierarchy must be recorded accurately); a circle is tagged `shape=circle`, selected/locked tagged `[state]`, a full-screen base image `@{0 0 100 100} z=1`. Competitor data is only tagged `:observed` / `:inferred`, **never write `:canonical`**. Eyeballing the geometry as a percentage is fine (precision is handled by the calibration in step 3). **Colors don't go into element lines** — step 3 uses `ui_palette.py --merge` to sample colors and write them into a `## Skin` section (spec §9).
 
-## 第 3 步：跑工具2 验证（必做，闭环）
+## Step 3: run tool 2 to verify (mandatory, closed loop)
 
 ```
-python ../aigd/references/scripts/ui_render.py <屏ID>.md <out>.html --svg <out>.svg
-python ../aigd/references/scripts/ui_palette.py <屏ID>.md <原图> --merge   # 采色写成 ## 皮肤 段
+python ../aigd/references/scripts/ui_render.py <screen ID>.md <out>.html --svg <out>.svg
+python ../aigd/references/scripts/ui_palette.py <screen ID>.md <original image> --merge   # sample colors into a ## Skin section
 ```
 
-- **缺 z 会提醒**(列出哪些没标)→ 捕获入库前**回去补全**(渲染本身不阻断,但入库要标准)。
-- 浏览器开 `<out>.html`,**眼比原图**:层级/区域比例/文本/交互对不对;切 线稿/皮肤/氛围 看结构(采色后皮肤档即用真色)。
-- 偏了就用 html 的「**校准**」拖拽微调 →「**导出 DSL**」把校正坐标贴回 `<屏ID>.md` → 再跑一遍。
-- 校验范围是**结构/比例/层级/文本/交互,不含美术**(美术换自己素材,见规范 §5)。
+- **Missing z is flagged** (lists which aren't tagged) → **go back and complete** before capturing into the library (rendering itself isn't blocked, but the library wants it standard).
+- Open `<out>.html` in a browser, **eyeball against the original**: are the hierarchy / region proportions / text / interaction right; toggle wireframe / skin / mood to see the structure (after sampling, the skin layer uses the real colors).
+- If it's off, use the html "**calibrate**" drag to fine-tune → "**export DSL**" to paste the corrected coordinates back into `<screen ID>.md` → run it again.
+- The verification scope is **structure / proportion / hierarchy / text / interaction, not art** (art swaps in your own assets, see spec §5).
 
-## 第 4 步：入库
+## Step 4: into the library
 
-合格后存 `patterns/界面范式/<游戏>/<屏ID>.{md, html, svg(可选)}`,并在该目录 `INDEX.md` 加一行(屏ID / 来源 / 布局模式 / 标签),供 concept/system 设计时检索同类参考。
+Once it passes, store at `patterns/ui-patterns/<game>/<screen ID>.{md, html, svg(optional)}`, and add a row in that directory's `INDEX.md` (screen ID / source / layout pattern / tags), for concept/system to retrieve similar references at design time.
 
-**需要拆素材时(可选)**:`ui_slice.py <屏ID>.md <原图> [outdir]` 把原图切成逐元素 png + `index.md` 接触表(`--only 背景槽,立绘槽,图标槽` 只切美术槽),便于参考/替换竞品部件;原图弃前跑一次即可(规范 §8)。
+**When you need to extract assets (optional)**: `ui_slice.py <screen ID>.md <original image> [outdir]` slices the original into per-element png + an `index.md` contact sheet (`--only bgSlot,artSlot,iconSlot` slices only the art slots), handy for referencing / replacing competitor parts; run it once before discarding the original (spec §8).
 
 ---
 
-## 硬约束（别违反）
+## Hard constraints (don't break)
 
-- **捕获入库必标 `z=`**(这是工具1 的纪律,不是渲染器强制——渲染器允许省 z 按缩进/文档序兜底,但抄真图要把层级记准)。
-- **不靠猜**:形状、层级只按 md 声明,渲染器不从纵横比/几何推断——所以工具1 必须把 `形=`/`z=` 写全。
-- **竞品来源**只用 `:观测`/`:推断`,不臆造 `:真源`。
-- **配色入皮肤段**:不写进元素行;用 `ui_palette.py --merge` 采成 `## 皮肤` 段(按 id),整段可换可删(规范 §9)。
-- **还原结构非美术**:不追像素复刻,art 槽留空换素材。
-- 文件 **UTF-8 无 BOM**(中文加 BOM 会让下游乱码);各 harness 写法见 `../aigd/references/harness-adapt.md`。
-- 本 skill 只**编排**;文法/配方一律**以 `ui-dsl-spec.md` 为准**。
+- **Capture into the library must tag `z=`** (this is tool 1's discipline, not enforced by the renderer — the renderer allows omitting z and falls back to indentation / document order, but transcribing a real image means recording the hierarchy accurately).
+- **Don't rely on guessing**: shapes and hierarchy follow only the md declaration, the renderer doesn't infer from aspect ratio / geometry — so tool 1 must write `shape=` / `z=` in full.
+- **Competitor sources** use only `:observed` / `:inferred`, don't fabricate `:canonical`.
+- **Colors go into the skin section**: don't write them into element lines; use `ui_palette.py --merge` to sample them into a `## Skin` section (by id), the whole section is swappable / deletable (spec §9).
+- **Restoring structure, not art**: don't chase pixel-perfect replication, leave art slots empty to swap in assets.
+- Files are **UTF-8 without BOM** (adding a BOM to Chinese makes downstream garble); per-harness writing methods are in `../aigd/references/harness-adapt.md`.
+- This skill only **orchestrates**; the grammar / recipe always **defers to `ui-dsl-spec.md`**.

@@ -1,41 +1,41 @@
-# AIGD 常见错误速查(真踩过的坑)
+# AIGD common-mistakes quick reference (pitfalls actually hit)
 
-> **用途**:`aigd-system`/`aigd-handoff` 干活前过一眼。这里的坑**全是用 AIGD 实际开发/校验中暴露过的**(项目细节已中性化),不是教科书举例——每条给 症状 / 根因 / 正确做法。
-> 数值/经济类设计陷阱另见 [`patterns/numeric-traps/numeric-traps.md`](patterns/numeric-traps/numeric-traps.md);本页是**执行 + 交接 + 校验**类。
+> **Purpose**: skim before working with `aigd-system`/`aigd-handoff`. The pitfalls here are **all ones exposed during actual development/validation with AIGD** (project details neutralized), not textbook examples — each gives symptom / root cause / correct practice.
+> Numeric/economy design traps are separately covered in [`patterns/numeric-traps/numeric-traps.md`](patterns/numeric-traps/numeric-traps.md); this page is for the **execution + handoff + validation** kind.
 
 ---
 
-## A. 工具执行 / 写文件(最易"以为做了其实没做")
+## A. Tool execution / writing files (the easiest "thought I did it but didn't")
 
-| 错误 | 症状 | 根因 | 正确做法 |
+| Mistake | Symptom | Root cause | Correct practice |
 |------|------|------|---------|
-| **工具调用 malformed 静默不执行** | "又炸了 / 写完了吗";文件没写、命令没跑,却以为已完成 | function-call 块格式不合 harness 要求(如 Claude Code 缺 `antml:` 前缀)→ 被静默丢弃 | **发前核一遍格式 + 发后复核产物**(读文件/`ls` 确认真落盘);用户说"炸了"→先承认未执行、核查实际状态、原样重发。各 harness 格式见 `harness-adapt.md` |
-| **中文文件被加 BOM / 变 UTF-16** | 下游读出乱码或解析失败 | 用了会加 BOM 的写法(如 PowerShell 裸 `Out-File`/`Set-Content`) | 落盘前确认 UTF-8 无 BOM(Claude Code 的 Write 默认无 BOM;PowerShell 用 `UTF8Encoding $false`),见 `harness-adapt.md` |
-| **删/改不可逆** | 误删用户源文件、覆盖已填配置 | 仓库**非 git**,删除/重命名无回退 | 动已有文件**前先 Read 看内容**;**绝不动/不覆盖**用户的源 xlsx 与已填配置;删产物前确认是产物非真源 |
-| **表格内裸 `|` 撑乱列** | markdown 表格列数错位(MD056) | 内容里写了字面 `|`(如位编码公式 `(X+1)<<16)|(Y+1)`) | 内容列用 `/` 或转义 `\|` |
+| **Malformed tool call silently doesn't execute** | "blew up again / is it written yet?"; file not written, command not run, yet you think it's done | the function-call block format doesn't meet the harness's requirement (e.g. Claude Code missing the `antml:` prefix) → silently discarded | **Check the format before sending + double-check the artifact after** (confirm it actually landed with read-file / `ls`); if the user says "blew up" → first admit it didn't execute, check the actual state, resend verbatim. Per-harness formats in `harness-adapt.md` |
+| **Chinese file gets a BOM added / turns into UTF-16** | downstream reads garbled or fails to parse | used a writing method that adds a BOM (e.g. bare PowerShell `Out-File`/`Set-Content`) | confirm UTF-8 without BOM before writing to disk (Claude Code's Write defaults to no BOM; PowerShell uses `UTF8Encoding $false`), see `harness-adapt.md` |
+| **Delete/edit is irreversible** | accidentally deleted the user's source file, overwrote filled config | the repo is **not git**, delete/rename has no rollback | **Read the content first** before touching an existing file; **never touch / never overwrite** the user's source xlsx and filled config; before deleting an artifact, confirm it's an artifact, not a canonical source |
+| **Bare `|` in a table breaks columns** | markdown table column count misaligned (MD056) | wrote a literal `|` in the content (e.g. the position-encoding formula `(X+1)<<16)|(Y+1)`) | use `/` or escape `\|` in the content column |
 
-## B. 设计 / 编码口径(交接包被下游读出分叉的源头)
+## B. Design / coding conventions (the source of forked reads downstream of the handoff package)
 
-| 错误 | 症状 | 根因 | 正确做法 |
+| Mistake | Symptom | Root cause | Correct practice |
 |------|------|------|---------|
-| **哨兵值与合法值撞车** ⚠️ | 左上角格不可用;`0` 既是"无"又是合法编码 | `0`/空当"无"哨兵,但合法域含 0 或编码会算出 0(如网格位编码左上角 (0,0)→0 撞"在背包"哨兵) | 用 `0` 当哨兵前确认**合法域不含 0、无编码路径产 0**;编码类各 `+1` 给哨兵让位 |
-| **运算符优先级写错(连伪代码)** | 下游照伪代码实现得到错值 | 如 `pos>>16 - 1` 实为 `pos>>15`(移位优先级低于减) | 公式/伪代码也**显式加括号** `(pos>>16)-1`;给 proto 注释带完整公式 |
-| **散文里塞裸数值** | 数值改了文档忘改、双真源漂移 | 规则文档直接写死数字而非引用配置 | 散文**无裸数值**:只写公式 + `表[主键].字段` 引用;数值住 xlsx |
-| **待定口径替用户拍了** | 锁进脊柱的数值/规则其实没定 | 怕麻烦自己拍了 `[待确认]` | 待定一律列 `[待确认]` 交用户拍板,**AI 不替拍数值/口径** |
+| **Sentinel value collides with a legal value** ⚠️ | the top-left cell is unusable; `0` is both "none" and a legal encoding | using `0`/empty as the "none" sentinel, but the legal domain contains 0 or the encoding can compute 0 (e.g. grid position encoding of the top-left corner (0,0)→0 collides with the "in inventory" sentinel) | before using `0` as a sentinel, confirm the **legal domain doesn't contain 0 and no encoding path produces 0**; for encoding types, `+1` each to make room for the sentinel |
+| **Operator precedence written wrong (even in pseudocode)** | downstream implements per the pseudocode and gets a wrong value | e.g. `pos>>16 - 1` is actually `pos>>15` (shift has lower precedence than subtraction) | add explicit parentheses even in formulas/pseudocode: `(pos>>16)-1`; give the proto comment the full formula |
+| **Bare numbers stuffed into prose** | a number changed but the doc forgot to update, dual-canonical drift | the rule doc hard-codes numbers directly instead of referencing config | prose has **no bare numbers**: write only formulas + `table[primaryKey].field` references; numbers live in the xlsx |
+| **Decided a pending convention for the user** | a number/rule locked into the spine actually wasn't decided | took it on yourself to decide a `[to-confirm]` to avoid hassle | always list pending items as `[to-confirm]` for the user to decide; **the AI does not decide numbers/conventions on their behalf** |
 
-## C. 校验 / 交接(机检 > 自评勾框)
+## C. Validation / handoff (machine-check > self-assessed checkboxes)
 
-| 错误 | 症状 | 根因 | 正确做法 |
+| Mistake | Symptom | Root cause | Correct practice |
 |------|------|------|---------|
-| **config↔doc 失同步** ⚠️ | 文档层全过,下游仍实现分叉 | **先定文档、后改 xlsx 没回写**(交接包被下游读出分叉的头号根因) | 定稿前**必跑** `config_check`(schema)+`value_check`(数据完整性),0 major 才算过;别只勾"校验清单"框自评 |
-| **校验器误报(空哨兵/空格)** | 假 `FK_BREAK`/假 `ACC_DANGLING`,可信度崩 | `0`=无引用被当 id 查外键(某"下一形态 id"字段=0);空 optional 格被当行缺(某可选字段留空) | 外键跳过空哨兵 `{0,0.0}`(前提 id 恒正);用 `row_exists` 区分**行缺 vs 字段空**;**宁可漏报不误报**,解不出就标记不臆造 |
-| **对象数组表头漏解析** | 配置列被吞、报一堆假 major | 数组闭合只认 `]`,漏了对象数组 `max}]` | 闭合判定用 `"]" in nm`;数组列**不比标量类型**(混合子类型无单一类型) |
-| **脊柱跨表不自洽** | 模块码没登记、依赖指向不存在系统、定稿缺 proto | manifest 6 表手写、没机检 | 写脊柱后跑 `manifest_check`,major 先修再继续(见 `templates/manifest.tpl.md` 自检段) |
+| **config↔doc desync** ⚠️ | the doc layer all passes, downstream still implements a fork | **doc defined first, xlsx changed later without backfill** (the number-one root cause of forked reads of the handoff package) | before finalization **always run** `config_check` (schema) + `value_check` (data integrity), only 0 major counts as passing; don't just tick the "validation checklist" box self-assessed |
+| **Validator false positive (empty sentinel / empty cell)** | false `FK_BREAK`/false `ACC_DANGLING`, credibility collapses | `0`=no-reference treated as an id and queried as a foreign key (some "next form id" field = 0); an empty optional cell treated as a missing row (some optional field left blank) | skip foreign-key empty sentinels `{0,0.0}` (precondition: id is always positive); use `row_exists` to distinguish **missing row vs empty field**; **prefer under-reporting over false-reporting**, and if you can't resolve it, mark rather than fabricate |
+| **Object-array header missed in parsing** | config columns swallowed, a pile of false majors reported | array closure only recognizes `]`, missing the object-array `max}]` | use `"]" in nm` for closure detection; array columns **don't compare scalar types** (mixed sub-types have no single type) |
+| **Spine cross-table inconsistency** | module-code unregistered, dependency points at a nonexistent system, finalized but missing proto | the manifest's 6 tables hand-written, not machine-checked | after writing the spine, run `manifest_check`, fix majors first before continuing (see the self-check section in `templates/manifest.tpl.md`) |
 
-## D. 委托子 agent(消费端验证 / 并行产出时)
+## D. Delegating to sub-agents (consumer-side validation / parallel production)
 
-| 错误 | 症状 | 根因 | 正确做法 |
+| Mistake | Symptom | Root cause | Correct practice |
 |------|------|------|---------|
-| **轻信子 agent 的断言** | 据子 agent 报的"缺口"改了,其实没缺 | 子 agent 声称配置缺某数据(如误报某数组只有 1 个成员、实为 3 个) | 子 agent 报的缺口/bug**亲自核 xlsx 一手验**,再决定改不改 |
-| **子 agent 乱写账本** | CHANGELOG 混入脚手架/产物的记录 | 委托时没交代清楚记账边界 | 约定:**`.uploads/` 脚手架与中间产物不写 CHANGELOG**;委托时明确告知,并行写同一文件先重读末尾再追加 |
-| **子 agent 注入的项目快照过期** | 子 agent 报"某文件还是旧值"但磁盘已是新值 | 子 agent 拿的是会话开始时的项目上下文快照,落后于会话中途的编辑 | 以**磁盘实际内容为准**,别据子 agent 的快照判断;有疑先 Read 当前文件 |
+| **Blindly trusting a sub-agent's assertion** | changed something based on a "gap" the sub-agent reported, when there was no gap | the sub-agent claims the config is missing some data (e.g. falsely reports an array has only 1 member, actually 3) | personally verify the gap/bug the sub-agent reports against the xlsx first-hand, then decide whether to change |
+| **Sub-agent writes garbage into the ledger** | CHANGELOG mixed with records of scaffolding/artifacts | the recording boundary wasn't spelled out when delegating | agree that **`.uploads/` scaffolding and intermediate artifacts are not written to CHANGELOG**; state this clearly when delegating; for parallel writes to the same file, re-read the tail before appending |
+| **Sub-agent's injected project snapshot is stale** | the sub-agent reports "some file is still the old value" but the disk is already the new value | the sub-agent holds a snapshot of the project context from the start of the session, lagging mid-session edits | take the **actual disk content as authoritative**, don't judge by the sub-agent's snapshot; if in doubt, Read the current file first |

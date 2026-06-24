@@ -1,83 +1,83 @@
-# manifest（脊柱模板）—— A 系统清单+依赖图 / B 号段登记 / C 跨层索引 / D 冻结账本+待重验 / E 回退记录 / F 共享真源兼容账本
+# manifest (Spine Template) — A System Inventory + Dependency Graph / B Range Registry / C Cross-layer Index / D Freeze Ledger + Recheck / E Rollback Records / F Shared-source-of-truth Compatibility Ledger
 
-> **强类型**:每张表列固定,AI 按列读写,**别改列结构**;`<>` 是填空,`枚举:` 标合法值。
-> 一份文件当 **6 张表(A–F)+ 状态枚举**。所有子 skill「读脊柱 → 干活 → 写回」都操作它。
+> **Strongly typed**: each table's columns are fixed, the AI reads/writes by column, **don't change the column structure**; `<>` is a blank to fill, `enum:` marks the legal values.
+> One file acts as **6 tables (A–F) + the status enum**. Every sub-skill's "read the spine → do the work → write back" operates on it.
 
-## 状态枚举（全表统一）
-`草稿` → `试玩中` → `定稿` → `待重验`(共享项变更后被反查标记)→ 重验后回 `定稿`。
-> `定稿*` = 定稿的**注记变体**(6 件套齐但有 `[待确认]` 挂账,见 D 表「定稿挂账」),**非独立状态**,按 `定稿` 对待、挂账清零后去 `*`。
+## Status Enum (unified across all tables)
+`Draft` → `Playtesting` → `Final` → `Recheck` (marked by reverse lookup after a shared item changes) → back to `Final` after the recheck.
+> `Final*` = an **annotated variant** of Final (the six-piece set is complete but there are `[TBD]` items on the books, see table D "Final-with-backlog"), **not a separate status**; treat it as `Final`, and drop the `*` once the backlog is cleared.
 
-## A. 系统清单 + 依赖图
-| 系统ID | 系统名 | 区-子-系统目录 | 状态 | R-模块码 | 依赖(上游) | 被依赖(下游) |
+## A. System Inventory + Dependency Graph
+| SystemID | Name | area-sub-system dir | Status | R-ModuleCode | Deps (upstream) | Depended-on-by (downstream) |
 |--------|--------|----------------|------|----------|-----------|-------------|
-| S01 | `<战斗>` | `<03玩法-…>` | 草稿 | R-CMBT | S03,S04 | S07 |
+| S01 | `<Combat>` | `<03gameplay-…>` | Draft | R-CMBT | S03,S04 | S07 |
 
-> 依赖图 = 本表「依赖 / 被依赖」两列的边集。**环检测**:A↔B 互依 → 公共类型**先在项目层(全局规范)登记**破环,handoff 时具象为 `proto/common`。
-> **外部/待设计依赖**:依赖对象还不是系统(无系统ID)时,在「依赖(上游)」标 `<名>[外部]` 或 `[待设计]`,**别与系统边混**;待其立项再连真边。
-> **基础被引系统**(如"道具表"被几乎所有系统引用):「被依赖」写不下也别强枚举,标 `广播(见 F 表)`——这类下行不走逐系统重验。
+> The dependency graph = the edge set of this table's "Deps / Depended-on-by" columns. **Cycle detection**: A↔B mutually depend → **register the common type at the project layer (global spec) first** to break the cycle, then make it concrete as `proto/common` at handoff time.
+> **External / to-be-designed dependencies**: when the dependency target isn't a system yet (no SystemID), mark it `<name>[external]` or `[TBD-design]` in the "Deps (upstream)" column, **don't mix it with system edges**; connect the real edge once it's chartered.
+> **Foundational referenced systems** (e.g. "item table" is referenced by almost every system): if "Depended-on-by" can't fit and you shouldn't force-enumerate it, mark it `broadcast (see table F)` — this kind of downstream propagation doesn't go through per-system recheck.
 
-## B. 号段分配登记（防撞 · 项目层单一真源）
-| 模块码 | 系统 | 协议号段 | 错误码段 | 备注 |
+## B. Range Allocation Registry (collision-prevention · single source of truth at the project layer)
+| ModuleCode | System | Protocol Range | Error-code Range | Notes |
 |--------|------|----------|----------|------|
-| R-CMBT | 战斗 | 1000–1099 | 5000–5099 | 领段时填;`示例` = 待与主程对齐 |
+| R-CMBT | Combat | 1000–1099 | 5000–5099 | filled in when claiming a range; `example` = pending alignment with the lead programmer |
 
-## C. 跨层索引（每系统一块 —— 散在各层的全部产物 + 共享关系）
+## C. Cross-layer Index (one block per system — all artifacts scattered across layers + shared relationships)
 
-> 每系统一个 `### <系统ID> <系统名>` 子块,字段作小标题、**纵向**排列。强类型字段名不变;**宽表在真数据上不可读,故用分块**。
-> **配置表归项目层全局池(无系统私有表)**:「配置表」列 = 本系统主用/维护的全局表(按名引用、位置无关),**非私有**;别系统也能引用它。
-> **维护者** = 在「反向提供」列声明该表的系统(改它的 schema 由它把关);无单一维护者的纯全局源(如 `base`/`property`)标 `全局维护`,改动走全局规范评审。
+> One `### <SystemID> <Name>` sub-block per system, with fields as sub-headings, laid out **vertically**. The strongly-typed field names don't change; **a wide table is unreadable on real data, hence the block layout**.
+> **Config tables belong to the project-layer global pool (no system-private tables)**: the "Config tables" column = the global tables this system primarily uses/maintains (referenced by name, location-independent), **not private**; other systems can reference them too.
+> **Maintainer** = the system that declares this table in the "Reverse-provides" column (it gatekeeps schema changes to it); a pure global source with no single maintainer (e.g. `base`/`property`) is marked `global-maintained`, and changes go through global-spec review.
 
-### S01 `<系统名>`
-- **规则(-01)**:`docs/系统/<…>/rules.md`(挂 R-编号)
-- **配置表**:`config/source/<…>.xlsx` + 配置说明
-- **引用的共享真源**:枚举[…] / LocalizationText / base.xlsx …
-- **契约(proto)**:`proto/<…>.proto`(import `common`;占号段)
-- **验收**:`<…>-05acceptance.md`(+ 策划版清单)
-- **资源需求**:`<…>资源需求`(图标 / 动效…)
-- **原型**:`prototypes/<…>.html`
-- **反向提供**:本系统给项目层的共享物(如"道具表真源");**若是广播型共享真源 → 去 F 表登记兼容策略**(别只写在这,见 F2)
+### S01 `<Name>`
+- **Rules (-01)**: `docs/systems/<…>/rules.md` (carries R-codes)
+- **Config tables**: `config/source/<…>.xlsx` + config spec
+- **Referenced shared sources of truth**: enums[…] / LocalizationText / base.xlsx …
+- **Contract (proto)**: `proto/<…>.proto` (imports `common`; occupies a range)
+- **Acceptance**: `<…>-05acceptance.md` (+ planner-facing checklist)
+- **Asset needs**: `<…> asset needs` (icons / VFX…)
+- **Prototype**: `prototypes/<…>.html`
+- **Reverse-provides**: the shared things this system gives to the project layer (e.g. "the item-table source of truth"); **if it's a broadcast-type shared source of truth → register the compatibility strategy in table F** (don't only write it here, see F2)
 
-## D. 冻结账本 + 待重验
-| 系统 | 状态 | 定稿时间 | 占用号段 | 待重验触发(引用了哪些共享项) |
+## D. Freeze Ledger + Recheck
+| System | Status | Final time | Occupied ranges | Recheck trigger (which shared items it references) |
 |------|------|----------|----------|------------------------------|
-| S01 | 草稿 | — | — | LocalizationText 结构 / 某枚举 / 某共享表字段 |
+| S01 | Draft | — | — | LocalizationText structure / a certain enum / a certain shared-table field |
 
-> **定稿挂账**:6 件套齐但仍有 `[待确认]` 尾巴(真系统常态)→ 状态记 `定稿*`,在「待重验触发」列旁注挂账项(如「使用功能字段待对齐」)。不为 TBD 单设状态;`定稿*` 仍按定稿对待、可被下游实现,挂账清零后去掉 `*`。
-> **`待重验` 出口**:重验通过 → 状态回 `定稿`,`定稿时间` 刷为本次重验确认时间(此列 = 「最近一次定稿/重验」);不通过 → 打回(记 E 表)。执行者 = `aigd-sync`(标待重验的是它,解除的也是它)。
+> **Final-with-backlog**: the six-piece set is complete but there's still a `[TBD]` tail (the normal state of a real system) → record the status as `Final*`, and note the backlog item next to the "Recheck trigger" column (e.g. "feature field pending alignment"). Don't create a separate status for TBDs; `Final*` is still treated as Final, can still be implemented downstream, and drops the `*` once the backlog is cleared.
+> **`Recheck` exit**: recheck passes → status returns to `Final`, and `Final time` is refreshed to this recheck's confirmation time (this column = "most recent finalization/recheck"); fails → bounced back (recorded in table E). The executor = `aigd-sync` (it's the one that marks Recheck, and also the one that clears it).
 
-## E. 回退记录（打回 / 重拆 都记一笔 —— 支撑非线性流程)
-| 时间 | 系统 | 从状态 → 到状态 | 原因 | 受影响的下游(已标待重验) |
+## E. Rollback Records (both bounce-backs and re-splits get a line — supports the non-linear flow)
+| Time | System | From status → To status | Reason | Affected downstream (already marked Recheck) |
 |------|------|-----------------|------|--------------------------|
-| `<…>` | S01 | 定稿 → 试玩中 | handoff 暴露设计漏洞 | S07(定稿 → 待重验) |
+| `<…>` | S01 | Final → Playtesting | handoff exposed a design flaw | S07 (Final → Recheck) |
 
-> **打回规则**:任一系统状态回退,**反查 A 表「被依赖(下游)」**(「被依赖」只在 A 表),把依赖它的已定稿系统全部标 `待重验`,记入本表。
-> ⚠️ 打回规则只对**点对点系统边**有效;**广播型共享真源**(被多数系统引用的 id 命名空间 / 文本结构 / 枚举)变更**不走这条**——走 F 表(否则炸成全表重验)。
+> **Bounce-back rule**: when any system's status rolls back, **reverse-look up table A's "Depended-on-by (downstream)"** ("Depended-on-by" lives only in table A), mark all the finalized systems that depend on it as `Recheck`, and record them in this table.
+> ⚠️ The bounce-back rule only applies to **point-to-point system edges**; changes to a **broadcast-type shared source of truth** (an id namespace / text structure / enum referenced by most systems) **don't go through this rule** — they go through table F (otherwise it explodes into a full-table recheck).
 
-## F. 共享真源兼容账本（广播型真源 —— 替代「逐系统标重验」)
+## F. Shared-source-of-truth Compatibility Ledger (broadcast-type sources of truth — replaces "marking recheck per system")
 
-> **为什么单列**:`item.id` 命名空间 / `LocalizationText` 结构 / 枚举 这类被「几乎所有系统」引用的**广播型共享真源**,扇出=全项目;
-> 对它们套用「改 → 反查被依赖 → 标下游重验」会炸成**全表重验**。改走**兼容策略**:向后兼容变更免重验,只有破坏性变更才触发,且范围 = 该真源引用方(非全表)。
+> **Why a separate table**: broadcast-type shared sources of truth like the `item.id` namespace / `LocalizationText` structure / enums, which are referenced by "almost all systems", have a fan-out = the whole project;
+> applying "change → reverse-look-up depended-on-by → mark downstream for recheck" to them explodes into a **full-table recheck**. Instead, use a **compatibility strategy**: backward-compatible changes need no recheck, only breaking changes trigger one, and the scope = that source's referrers (not the whole table).
 >
-> **走 F 表的判据**(满足 ≥1 条 → 广播策略;都不满足 → 走 A 表「被依赖」逐系统重验):
-> ① 被 **≥5 个系统**引用;
-> ② 属于 **id 命名空间 / 枚举字典 / LocalizationText 结构**(无论引用数);
-> ③ 引用方**不构成 A 表「依赖」边**(只消费其数据、不消费其产出逻辑)。
+> **Criteria for using table F** (meets ≥1 → broadcast strategy; meets none → go through table A's "Depended-on-by" per-system recheck):
+> ① Referenced by **≥5 systems**;
+> ② It's an **id namespace / enum dictionary / LocalizationText structure** (regardless of referrer count);
+> ③ The referrers **don't form a table-A "Deps" edge** (they only consume its data, not its output logic).
 
-| 共享真源 | 类型 | 兼容策略(免重验) | 破坏性变更(才触发) |
+| Shared source of truth | Type | Compatibility strategy (no recheck) | Breaking change (triggers recheck) |
 |----------|------|------------------|---------------------|
-| `<某 id 命名空间>` | 广播 | 只新增不复用旧 id | 删 / 改语义 → 全局公告 + 涉及方逐一确认 |
-| `<LocalizationText 结构>` | 广播 | 加字段不删、id 不复用 | 改结构 → 所有引用方重验 |
-| `<某枚举>` | 广播 | **只追加值**,不删 / 不改义 | 删值 / 改义 → 反查该枚举引用方重验 |
+| `<some id namespace>` | broadcast | add-only, never reuse old ids | delete / change semantics → global announcement + per-referrer confirmation |
+| `<LocalizationText structure>` | broadcast | add fields without deleting, don't reuse ids | change the structure → all referrers recheck |
+| `<some enum>` | broadcast | **append values only**, no deleting / no changing meaning | delete a value / change meaning → reverse-look-up that enum's referrers for recheck |
 
-> **判定**:向后兼容(纯追加)→ **无需重验**;**破坏性变更** → 反查 **C 表「引用的共享真源」** 找出列了它的系统 → 标 D 表 `待重验`(范围限引用方,非全表)。点对点系统边则走 A 表「被依赖(下游)」反查。
+> **Decision**: backward-compatible (pure append) → **no recheck needed**; **breaking change** → reverse-look-up **table C's "Referenced shared sources of truth"** to find the systems that listed it → mark them `Recheck` in table D (scope limited to referrers, not the whole table). Point-to-point system edges instead go through table A's "Depended-on-by (downstream)" reverse lookup.
 
 ---
 
-## 自检命令(写脊柱后跑,别只肉眼看)
+## Self-check Command (run after writing the spine, don't just eyeball it)
 
 ```
 python references/scripts/manifest_check.py manifest.md
 ```
 
-退出码非 0 = 有 **major**(模块码未登记 / 依赖指向不存在的系统 / 状态非法 / 系统缺 C 分块)→ **先修自洽再操作**。advisory(依赖成环、定稿缺 proto/验收、号段空挂、残留 C 分块)与 info(依赖按名连边)请人工判读。校验项与严重度见 `references/scripts/README.md`。
-> 此检查只管**脊柱内部自洽**;配置 ↔ 文档漂移走 `config_check`,数据完整性走 `value_check`。
+A non-zero exit code = there's a **major** (unregistered module code / a dependency pointing to a nonexistent system / illegal status / a system missing its C block) → **fix self-consistency first before operating**. Advisories (dependency cycle, finalized but missing proto/acceptance, a dangling range, a leftover C block) and infos (dependency edges connected by name) need human judgment. See `references/scripts/README.md` for the check items and their severities.
+> This check only covers **the spine's internal self-consistency**; config ↔ doc drift goes through `config_check`, and data integrity goes through `value_check`.

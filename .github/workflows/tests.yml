@@ -1,7 +1,7 @@
 name: tests
 
-# AIGD 校验器/工具脚本测试。纯 stdlib runner(非 pytest):每个 test 文件
-# if __name__=="__main__" 跑全部 test_*,按失败数设退出码。
+# AIGD checker/tool script tests. Pure stdlib runner (not pytest): each test file
+# runs all test_* under if __name__=="__main__", sets the exit code by failure count.
 on:
   push:
   pull_request:

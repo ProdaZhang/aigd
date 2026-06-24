@@ -1,79 +1,79 @@
-# EXAMPLE-01 · 示例屏 · 难度选择/详情屏
+# EXAMPLE-01 · sample screen · difficulty-select / detail screen
 
-> 用途: roguelike 难度选择(纵向阶梯) + 选中难度的详情(奖励/词缀)预览 + 进入
-> 布局模式: 左侧难度纵向阶梯 + 中央大背景art + 右侧详情卡 + 顶/底功能条
-> 标签: #难度选择 #纵向阶梯 #详情卡 #词缀列表 #roguelike #三分栏
-> 来源: 示例(结构参考·非真实项目) / 原图弃
-> 类型: 屏
-> 尺寸: 1856×1080 (横版示例;几何用百分比 0–100,原点左上)
+> Purpose: roguelike difficulty select (vertical ladder) + a preview of the selected difficulty's details (rewards/affixes) + enter
+> Layout pattern: left vertical difficulty ladder + central large background art + right detail card + top/bottom function bars
+> Tags: #difficultySelect #verticalLadder #detailCard #affixList #roguelike #threeColumn
+> Source: sample (structure reference · not a real project) / original image discarded
+> Type: screen
+> Size: 1856×1080 (landscape sample; geometry uses percentage 0–100, origin top-left)
 
-## 配色板 (可选提示, 仅做语义参考——美术换自己素材)
+## Palette (optional hint, semantic reference only — art swaps in its own assets)
 
-背景 暗红紫渐变 #1c0f18→#08060c · 主强调 品红 #e848a0 · 卡面 深紫半透 #2a2442 · 文字 #f0eaf2 · 词缀橙 #e89048 · 数值绿 #7ad08a · 货币蓝 #6ab0e0
+background dark red-purple gradient #1c0f18→#08060c · main accent magenta #e848a0 · card face deep-purple semi-transparent #2a2442 · text #f0eaf2 · affix orange #e89048 · value green #7ad08a · currency blue #6ab0e0
 
-## Layout (层级树: 元素 :id [类型] @{x y w h, %} z=层 "文本")
+## Layout (hierarchy tree: element :id [type] @{x y w h, %} z=layer "text")
 
 ```
-窗口标题栏        :titlebar [chrome]  @{0 0 100 3.4}  z=9
-  标题                    [文本]   @{0.9 0.6 12 2} z=9              "示例标题"
-  窗口控制 ×3             [按钮]   @{92 0.5 8 2.8} z=9              "—  □  ✕"
-顶栏              :topbar   [容器]   @{0 4.5 100 7.5}  z=5
-  返回            :back     [按钮]   @{1.8 4.9 4.8 5.3} z=6      "◁"
-  屏标题                   [文本]   @{7.3 5.5 6 4} z=6              "卡厄思"
-  赛季信息        :season   [按钮]   @{14 6.2 12.3 4} z=6        "ⓘ 赛季信息"
-  货币·卡         :curCard  [图标槽] @{59 5.9 11.3 4.3} z=6         "[卡] 0/4 ＋"
-  货币·旋律       :curMelody[图标槽] @{73 5.9 13.1 4.3} z=6         "♪ 2,424"
-  主页            :home     [按钮]   @{88 5.3 3.8 5.6} z=6       "⌂"
-  菜单            :menu     [按钮]   @{93.8 5.3 3.8 5.6} z=6     "≡ (红点)"
-难度阶梯          :diffrail [容器]   @{1.8 14 11 65}  z=4
-  标题                    [文本]   @{1.8 14.7 9 3.6} z=5           "◎ 难度"
-  连接线                  [装饰]   @{6.3 21 1.5 58} z=4
-  难度·VII        :nodeVII  [按钮]   @{4.6 25.9 4.8 8.1} z=5 形=圆 "VII"
-  难度·VIII       :nodeVIII [按钮]   @{4 36 6 10.3} z=6 [选中·品红辉光] 形=圆 "VIII"
-    选中环                 [装饰]   @{1.9 39 2 3.5} z=6 形=圆 "◎"
-  难度·锁1        :nodeL1   [按钮]   @{4.6 48.3 4.8 8.1} z=5 [锁] 形=圆 "🔒"
-  难度·锁2        :nodeL2   [按钮]   @{4.6 60 4.8 8.1} z=5 [锁] 形=圆 "🔒"
-  难度·锁3        :nodeL3   [按钮]   @{4.6 71.3 4.8 8.1} z=5 [锁] 形=圆 "🔒"
-中央背景art(全屏底图) :heroArt [背景槽] @{0 0 100 100} z=1  "全屏底图层·漩涡之眼居中偏左~37%/48%·红翼环绕·UI浮其上·换自己素材"
-详情卡            :card     [面板]   @{68.4 13.7 30.3 70.9} z=3
-  卡标题                  [文本]   @{70.6 20.8 22.5 6} z=4     "幻象剧场"
-  关卡等级                [文本]   @{69.9 28.6 9.4 4.1} z=4    "🔥 等级80"
-  Boss像          :boss     [图标槽] @{92.4 24.8 5 8.5} z=4 形=圆 "Bossⓘ"
-  奖励倍率行                [面板]   @{69.4 34 28.8 5.3} z=4     "♪ 无暇旋律获得 240%"
-  奖励项·1                 [文本]   @{70.6 40.8 27.5 3.2} z=4   "· 存储数据价值 14 层级"
-  奖励项·2                 [文本]   @{70.6 44.4 27.5 3.2} z=4   "· 稀有命运触发率增加 50%"
-  分隔线                   [装饰]   @{69.9 49.1 27.6 0.2} z=4
-  词缀·硬化2               [文本]   @{70.3 51 28.4 3.6} z=4     "[硬化2] 异形每3回合获得不屈2"
-  词缀·疾病3               [文本]   @{70.3 55.1 28.4 3.6} z=4   "[疾病3] 生命值上限减少40%"
-  词缀·坏疽3               [文本]   @{70.3 59.4 28.4 6} z=4     "[坏疽3] 从第二回合起,回合开始时,生命值减少5%"
-  词缀·疏忽1               [文本]   @{70.3 66 28.4 3.6} z=4     "[疏忽1] 回合开始时,随机丢掉1张卡牌"
-  再次观测        :reobserve[按钮]   @{68.6 76.7 29.8 6.1} z=4   "◎ 再次观测      ♪ 10"
-底栏              :bottombar[容器]   @{0 85.5 100 9.4}  z=5
-  探索度                  [文本]   @{1.9 86.8 16.3 6.4} z=6        "◎ 探索度  等级20"
-  奖励信息        :rewardInfo[按钮]  @{21.3 86.8 18.8 6.4} z=6  "▣ 奖励信息"
-  每周进展        :weekly   [数值条] @{43.8 86.3 23.8 6.8} z=6   "每周进展 8000/8000 (满)"
-  进入            :enter    [按钮·主] @{80 85.5 18.8 9.4} z=6    "进入"
+windowTitlebar   :titlebar [chrome]  @{0 0 100 3.4}  z=9
+  title                   [text]   @{0.9 0.6 12 2} z=9              "Sample Title"
+  windowControls ×3       [button] @{92 0.5 8 2.8} z=9              "—  □  ✕"
+topbar           :topbar   [container] @{0 4.5 100 7.5}  z=5
+  back           :back     [button] @{1.8 4.9 4.8 5.3} z=6      "◁"
+  screenTitle             [text]   @{7.3 5.5 6 4} z=6              "Chaos"
+  seasonInfo     :season   [button] @{14 6.2 12.3 4} z=6        "ⓘ Season Info"
+  currency·card  :curCard  [iconSlot] @{59 5.9 11.3 4.3} z=6      "[card] 0/4 ＋"
+  currency·melody:curMelody[iconSlot] @{73 5.9 13.1 4.3} z=6      "♪ 2,424"
+  home           :home     [button] @{88 5.3 3.8 5.6} z=6       "⌂"
+  menu           :menu     [button] @{93.8 5.3 3.8 5.6} z=6     "≡ (red dot)"
+difficultyLadder :diffrail [container] @{1.8 14 11 65}  z=4
+  title                   [text]   @{1.8 14.7 9 3.6} z=5           "◎ Difficulty"
+  connectorLine           [decoration] @{6.3 21 1.5 58} z=4
+  difficulty·VII  :nodeVII  [button] @{4.6 25.9 4.8 8.1} z=5 shape=circle "VII"
+  difficulty·VIII :nodeVIII [button] @{4 36 6 10.3} z=6 [selected·magentaGlow] shape=circle "VIII"
+    selectionRing         [decoration] @{1.9 39 2 3.5} z=6 shape=circle "◎"
+  difficulty·lock1 :nodeL1  [button] @{4.6 48.3 4.8 8.1} z=5 [locked] shape=circle "🔒"
+  difficulty·lock2 :nodeL2  [button] @{4.6 60 4.8 8.1} z=5 [locked] shape=circle "🔒"
+  difficulty·lock3 :nodeL3  [button] @{4.6 71.3 4.8 8.1} z=5 [locked] shape=circle "🔒"
+centralBackgroundArt(fullscreen base image) :heroArt [bgSlot] @{0 0 100 100} z=1  "fullscreen base layer · eye-of-the-vortex centered slightly left ~37%/48% · red wings surrounding · UI floats above · swap in your own asset"
+detailCard       :card     [panel]  @{68.4 13.7 30.3 70.9} z=3
+  cardTitle               [text]   @{70.6 20.8 22.5 6} z=4     "Theater of Illusion"
+  stageLevel              [text]   @{69.9 28.6 9.4 4.1} z=4    "🔥 Level 80"
+  boss·portrait   :boss     [iconSlot] @{92.4 24.8 5 8.5} z=4 shape=circle "Bossⓘ"
+  rewardMultiplierRow      [panel]  @{69.4 34 28.8 5.3} z=4     "♪ Flawless Melody gain 240%"
+  reward·1                [text]   @{70.6 40.8 27.5 3.2} z=4   "· Stored Data value 14 tiers"
+  reward·2                [text]   @{70.6 44.4 27.5 3.2} z=4   "· Rare Fate trigger rate +50%"
+  divider                 [decoration] @{69.9 49.1 27.6 0.2} z=4
+  affix·harden2           [text]   @{70.3 51 28.4 3.6} z=4     "[Harden2] Aberrations gain Unyielding 2 every 3 turns"
+  affix·disease3          [text]   @{70.3 55.1 28.4 3.6} z=4   "[Disease3] Max HP reduced by 40%"
+  affix·gangrene3         [text]   @{70.3 59.4 28.4 6} z=4     "[Gangrene3] From the second turn on, HP decreases 5% at the start of each turn"
+  affix·neglect1          [text]   @{70.3 66 28.4 3.6} z=4     "[Neglect1] At the start of a turn, randomly discard 1 card"
+  reobserve       :reobserve[button] @{68.6 76.7 29.8 6.1} z=4   "◎ Observe Again      ♪ 10"
+bottombar        :bottombar[container] @{0 85.5 100 9.4}  z=5
+  exploration             [text]   @{1.9 86.8 16.3 6.4} z=6        "◎ Exploration  Level 20"
+  rewardInfo      :rewardInfo[button] @{21.3 86.8 18.8 6.4} z=6  "▣ Reward Info"
+  weeklyProgress  :weekly   [valueBar] @{43.8 86.3 23.8 6.8} z=6   "Weekly Progress 8000/8000 (full)"
+  enter           :enter    [button·primary] @{80 85.5 18.8 9.4} z=6    "Enter"
 ```
 
 ## Events
 
 ```
-点击 返回                       -> 上级(章节/地图选择)
-点击 赛季信息                   -> 赛季信息弹窗
-点击 主页                       -> 主界面
-点击 菜单                       -> 系统菜单
-点击 难度·VII / 难度·VIII  [未锁] -> 切换难度 → 刷新详情卡
-点击 难度·锁*              [锁]   -> 提示"未解锁"
-点击 Boss像                     -> Boss图鉴/详情
-点击 再次观测     [花费 ♪10]      -> 重 roll 当前难度的词缀/奖励
-点击 奖励信息                   -> 奖励一览弹窗
-点击 进入                       -> 进入关卡(幻象剧场 · 等级80)
+click back                         -> parent (chapter/map select)
+click seasonInfo                   -> season-info popup
+click home                         -> main interface
+click menu                         -> system menu
+click difficulty·VII / difficulty·VIII  [unlocked] -> switch difficulty → refresh detail card
+click difficulty·lock*             [locked] -> hint "not unlocked"
+click boss·portrait                -> boss codex/detail
+click reobserve     [cost ♪10]     -> re-roll the current difficulty's affixes/rewards
+click rewardInfo                   -> reward-overview popup
+click enter                        -> enter the stage (Theater of Illusion · Level 80)
 ```
 
-## 设计点评 (检索面)
+## Notes (retrieval facet)
 
-- 三分栏:左选择 / 中氛围art / 右详情,经典"选关+详情预览"骨架。
-- 难度纵向阶梯:用 锁 + 辉光 表达解锁进度与当前位;选中态靠 **尺寸放大 + 品红辉光**,不靠颜色单一维度。
-- 详情卡分三段:**奖励(正向, 绿/蓝)** → 分隔线 → **词缀(负向 debuff, 橙)**,正负色彩对比清晰;每条词缀前缀 `[名+强度]` tag。
-- "再次观测" = 付费重 roll,放卡底栏强调,是核心数值循环入口。
-- 底栏「左信息 / 右行动」,"进入"键最大且带音波装饰 = 视觉重心。
+- Three columns: left select / center atmosphere art / right detail, the classic "stage-select + detail-preview" skeleton.
+- Vertical difficulty ladder: uses locks + glow to express unlock progress and current position; the selected state relies on **size enlargement + magenta glow**, not on color as a single dimension.
+- The detail card has three segments: **rewards (positive, green/blue)** → divider → **affixes (negative debuffs, orange)**, with clear positive/negative color contrast; each affix is prefixed with a `[name+strength]` tag.
+- "Observe Again" = a paid re-roll, placed at the card bottom for emphasis, the entry to the core numeric loop.
+- The bottom bar is "left info / right action," the "Enter" button is the largest and carries a sound-wave decoration = the visual focus.

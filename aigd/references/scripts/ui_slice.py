@@ -1,12 +1,12 @@
-"""工具3 家族 · 确定性切片器:原图 + 界面 DSL → 每元素一张 png 切片 + index.md 接触表。
+"""Tool 3 family · deterministic slicer: source image + interface DSL -> one png slice per element + an index.md contact sheet.
 
-按 DSL 的 bbox 从原图切出每个元素的区域(`形=圆` 加圆形 alpha 蒙版),把竞品界面拆成
-可参考/可替换的部件素材。与 ui_palette 同族:复用 parse_dsl、需 Pillow、声明驱动
-(只按 `形=` 决定圆/方,不靠纵横比猜)。同输入 + 同 Pillow/zlib 版本 → 输出字节一致。
+Cuts each element's region out of the source image by the DSL bbox (`shape=circle` adds a circular alpha mask), splitting a
+competitor interface into reference/replaceable part assets. Same family as ui_palette: reuses parse_dsl, requires Pillow, declaration-driven
+(only `shape=` decides circle/square, not guessing from aspect ratio). Same input + same Pillow/zlib version -> byte-identical output.
 
-用法: python ui_slice.py <dsl.md> <image> [outdir]
-      python ui_slice.py <dsl.md> <image> [outdir] --only 背景槽,立绘槽,图标槽   # 只切这些类型
-产物: outdir/NN_<id或名>.png(逐元素切片,NN=文档序) + outdir/index.md(缩略图接触表 + bbox 表)。
+Usage: python ui_slice.py <dsl.md> <image> [outdir]
+       python ui_slice.py <dsl.md> <image> [outdir] --only bgSlot,artSlot,iconSlot   # only cut these types
+Output: outdir/NN_<id or name>.png (per-element slice, NN=document order) + outdir/index.md (thumbnail contact sheet + bbox table).
 """
 import sys, os, re
 
@@ -16,7 +16,7 @@ except ImportError:
     R = None
 
 _UNSAFE = re.compile(r'[\\/:*?"<>|\s]+')
-_CIRCLE = ("圆", "圆形", "circle")
+_CIRCLE = ("circle",)
 
 
 def _slug(e):
@@ -31,9 +31,9 @@ def _box(e, W, H):
 
 
 def cut(image_path, parsed, outdir, only=None):
-    """切出每个(可选按类型过滤的)元素 → outdir/NN_slug.png;返回 manifest 列表(保序)。
+    """Cut each (optionally type-filtered) element -> outdir/NN_slug.png; returns the manifest list (order preserved).
 
-    编号 NN 取自**完整元素列表的文档序**——即便用 only 过滤,留下来的切片编号仍稳定。
+    The number NN is taken from the **full element list's document order** -- even when filtered with only, the kept slices keep stable numbers.
     """
     from PIL import Image, ImageDraw
     img = Image.open(image_path).convert("RGB")
@@ -66,18 +66,18 @@ def cut(image_path, parsed, outdir, only=None):
 
 
 def _cell(s):
-    return str(s).replace("|", "/")          # 表格单元勿含裸竖线
+    return str(s).replace("|", "/")          # table cells must not contain a bare pipe
 
 
 def index_md(parsed, manifest):
-    """缩略图接触表 + bbox 表(markdown,KB 直接可读)。"""
-    lines = ["# 切片接触表 · %s" % (parsed["screen"] or ""), "",
-             "> 工具3 ui_slice 产物:逐元素切原图(`形=圆` 已加圆形蒙版)。",
-             "> 换素材时按 bbox/类型对位;原图可弃,本表 + 切片即归档。", ""]
+    """Thumbnail contact sheet + bbox table (markdown, directly readable in the knowledge base)."""
+    lines = ["# Slice contact sheet · %s" % (parsed["screen"] or ""), "",
+             "> Tool 3 ui_slice output: per-element cut from the source image (`shape=circle` already has a circular mask).",
+             "> When swapping assets, align by bbox/type; the source image can be discarded, this table + the slices are the archive.", ""]
     for m in manifest:
         cap = m["name"] or m["id"] or m["type"]
         lines.append("![%s](%s)" % (_cell(cap), m["file"]))
-    lines += ["", "| 切片 | id | 名称 | 类型 | 形 | z | bbox(x y w h %) |",
+    lines += ["", "| slice | id | name | type | shape | z | bbox(x y w h %) |",
               "|---|---|---|---|---|---|---|"]
     for m in manifest:
         z = "" if m["z"] is None else m["z"]
@@ -96,10 +96,10 @@ def main(argv=None):
         only = [t for t in argv[i + 1].split(",") if t] if i + 1 < len(argv) else None
         del argv[i:i + 2]
     if len(argv) < 2:
-        print("用法: python ui_slice.py <dsl.md> <image> [outdir] [--only 类型,类型]")
+        print("usage: python ui_slice.py <dsl.md> <image> [outdir] [--only type,type]")
         return 2
     if R is None:
-        print("✗ 需要同目录 ui_render.py(复用 parse_dsl)")
+        print("X requires same-directory ui_render.py (reuses parse_dsl)")
         return 2
     dsl, image = argv[0], argv[1]
     outdir = argv[2] if len(argv) > 2 and not argv[2].startswith("-") else (dsl.rsplit(".", 1)[0] + ".slices")
@@ -107,10 +107,10 @@ def main(argv=None):
         parsed = R.parse_dsl(f.read())
     from PIL import Image as _I
     iw, ih = _I.open(image).size
-    print("建议 > 尺寸:", "%dx%d" % R.recommend_size(iw, ih))
-    parsed = R.resolve(parsed, os.path.dirname(os.path.abspath(dsl)))   # 展开实例(无实例则恒等)
+    print("recommended > size:", "%dx%d" % R.recommend_size(iw, ih))
+    parsed = R.resolve(parsed, os.path.dirname(os.path.abspath(dsl)))   # expand instances (identity if none)
     manifest = cut(image, parsed, outdir, only)
-    print("slices ->", outdir, "(%d 片 + index.md)" % len(manifest))
+    print("slices ->", outdir, "(%d slices + index.md)" % len(manifest))
     return 0
 
 

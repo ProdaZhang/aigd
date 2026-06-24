@@ -1,75 +1,75 @@
-# 数值坑集 · 常见数值陷阱(设计 review 检查清单)
+# Numeric-trap collection · common numeric traps (design-review checklist)
 
-> **用途**:`aigd-system`/`aigd-iterate` 做数值/规则 review 时逐条过;也是 `aigd-concept` 提口径的提醒。
-> **怎么用**:对在设计的系统逐条自查"这个坑我躲了吗";能机检的标了对应工具(`value_check`/`config_check`/`manifest_check`),别只靠肉眼。
-> 标 ⚠️ 的是真实项目里实际暴露过的坑(以中性化的示意形式给出),不是教科书举例。
-
----
-
-## 1. 指数成长失控
-**症状**:后期数值溢出(战力/资源破 int、UI 显示挤爆、平衡无意义)。
-**根因**:成长用乘法复利(`×1.1^n`)而没有上限。
-**怎么防**:成长曲线优先用**分段线性/对数收敛**;必设硬上限(等级/星级上限);用 `value_check` 的 `coverage` 规则确认档位有明确终点,别开放式无限档。
-
-## 2. 0 除 / 空表 / 负伤治疗(防御性边界)
-**症状**:`#DIV/0`、空配置崩档、减法穿透变成"负伤=回血"。
-**根因**:公式没护栏——分母可能为 0,配置可能缺行,`atk−def` 可能为负。
-**怎么防**:除法前判分母;伤害 `max(1, atk−def)` 类下限;读配置行用"行存在"判定(`config_index.row_exists` 区分**行缺**与**字段空**——避免空optional格被当缺行误报)。空表/缺行要有明确兜底,不能静默取默认。
-
-## 3. 乘法叠加爆炸(加法域 vs 乘法域)
-**症状**:几个增益单独看温和,叠一起爆炸(或互乘到天文数字)。
-**根因**:同类加成该加法叠加却写成乘法连乘(或反之),没区分"加成域"。
-**怎么防**:明确每类加成进**加法池**还是**乘法池**(如 `最终伤害 = 基础 ×(1+Σ加法%)×Π(1+乘法%)`);同池内只 Σ;写进规则公式,别留给实现猜。
-
-## 4. 累计值 vs 增量值混淆 ⚠️
-**症状**:成长被重复累加(逐档求和又取了累计列)或漏加。
-**根因**:配置表存的是"截至本档累计总值"还是"本档增量",没全表统一也没写明。
-**怎么防**:**定一种、全表统一、写进配置说明**。如某养成系统的三围 `*Percentage`/技能点存**累计总值**,结算直接取当前档行(不逐档加),单次发放 = 本档−上档差分。累计列须**单调不减** → `value_check` 的 `monotonic` 规则机检。
-
-## 5. 哨兵值与默认值 / 合法值撞车 ⚠️
-**症状**:`0`/空既表示"无引用",又恰好是一个合法数据或编码结果 → 误判。
-**根因**:用 `0` 当"无"哨兵,但某字段的合法域含 0、或某编码会算出 0。
-**真实案例(中性化)**:
-- **网格背包的位编码**:某 3×N 网格用 `(列X<<16)|行Y` 编码格位,左上角格 `(0,0)→0`,与"在背包/未穿戴"哨兵 `0` 撞车,导致左上格不可穿戴。修复:编码各 `+1`(`((X+1)<<16)|(Y+1)`),`0` 专留背包。
-- **进化/引用字段 = 0**:某"下一形态 id"字段 `0`=末阶无引用,但外键校验把 0 当 id 去查 → 假 `FK_BREAK`。修复:`value_check` 把 `{0, 0.0}` 列为外键空哨兵跳过(前提:**id 域恒正、不含 0**)。
-**怎么防**:用 `0`/空当哨兵前,**确认该字段合法域不含 0、且没有编码路径会算出 0**;编码类用 `+1` 偏移给哨兵让位;把"`0`=无引用"写进字段说明,让校验器知道跳过。
-
-## 6. 单位/缩放不一致(万分比陷阱)
-**症状**:数值差 10000 倍,或百分比当绝对值用。
-**根因**:同一概念混用万分比(`/10000`)、百分比、绝对值。
-**怎么防**:项目统一缩放约定(如**万分比一律 `/10000`**),字段类型/说明标清单位;`config_check` 的 `DOMAIN` 能抓声明域(如 `0~10000`)与实际数据不符。
-
-## 7. 首充 / 付费阈值的心理与失衡
-**症状**:首充/档位设计让玩家"差一点点就到下一档"诱导超额消费,或定价错位致 ARPU 崩。
-**根因**:付费点与成长曲线没对齐,阈值拍脑袋。
-**怎么防**:付费档与养成坡度对齐(别让免费墙正好卡在付费档前显得逼氪);定价口径标 `[待确认]` 交策划/商业化拍,**AI 不替拍数值**。
-
-## 8. 保底 / 方差体验(伪随机)
-**症状**:真随机下非酋连续不出,体验崩;或保底太松失去稀缺感。
-**根因**:用纯均匀随机、无保底/软保底。
-**怎么防**:抽卡设**硬保底**(N 次必出)+ 可选**软保底**(递增概率);掉落用伪随机分布(PRD)压方差;保底计数器的存档位要进契约。
-
-## 9. 天花板与封顶(补全数据)
-**症状**:配置铺满了但部分行运行时不该用,实现却用了 → 越权成长。
-**根因**:数值表为整齐铺了超上限模板行,没机制截断。
-**怎么防**:封顶逻辑**集中一处**(如"以品质封顶":用品质表的"可进化次数"截断,超出的进化模板行是补全数据不使用);"链长 > 上限"是**预期**,校验规则用 `severity: advisory` 别报 major(见 `checks/example.checks.json` cardinality)。
-
-## 10. 跨系统数值耦合(一处改、全局漂移)
-**症状**:改一个共享值(品质系数/属性 id/文本结构),多个系统静默错位。
-**根因**:广播型共享真源(道具 id 命名空间、枚举、某全局品质/系数表等)被多系统引用,改动没走兼容策略。
-**怎么防**:广播型真源**只追加不破坏**(枚举只加值、表只加字段、id 不复用);破坏性变更才反查引用方重验——登记到 `manifest` F 表,`manifest_check` 守脊柱自洽。配置↔文档失同步用 `config_check`+`value_check` 机检(别只勾框自评——这是交接包被下游读出分叉的头号根因)。
+> **Purpose**: go through item by item during a `aigd-system`/`aigd-iterate` numeric/rule review; also a reminder for `aigd-concept` to propose conventions.
+> **How to use**: for the system being designed, self-check each item "did I dodge this trap"; items that can be machine-checked are tagged with the corresponding tool (`value_check`/`config_check`/`manifest_check`), don't rely only on the naked eye.
+> Items tagged ⚠️ are traps actually exposed in real projects (given in neutralized illustrative form), not textbook examples.
 
 ---
 
-## 速查:坑 ↔ 机检工具
+## 1. Exponential-growth runaway
+**Symptom**: late-game numbers overflow (power/resources break int, the UI display is crushed, balance becomes meaningless).
+**Root cause**: growth uses multiplicative compounding (`×1.1^n`) with no cap.
+**How to prevent**: prefer **piecewise-linear / logarithmic convergence** for growth curves; always set a hard cap (level/star cap); use `value_check`'s `coverage` rule to confirm tiers have a definite endpoint, no open-ended infinite tiers.
 
-| 坑 | 能机检吗 | 工具/规则 |
+## 2. Divide-by-0 / empty table / negative-damage-heal (defensive boundaries)
+**Symptom**: `#DIV/0`, empty config crashes the tier, subtraction underflow turns into "negative damage = healing."
+**Root cause**: the formula has no guardrail — the denominator may be 0, the config may be missing a row, `atk−def` may be negative.
+**How to prevent**: check the denominator before dividing; a lower bound like `max(1, atk−def)` for damage; read config rows with a "row exists" check (`config_index.row_exists` distinguishes **missing row** from **empty field** — avoiding the false report of an empty optional cell as a missing row). An empty table / missing row must have a definite fallback, can't silently take a default.
+
+## 3. Multiplicative-stacking explosion (additive domain vs multiplicative domain)
+**Symptom**: a few buffs look mild individually but explode when stacked (or multiply into astronomical numbers).
+**Root cause**: same-class bonuses that should add are written as a multiplicative product (or vice versa), with no distinction of "bonus domain."
+**How to prevent**: be clear whether each class of bonus goes into the **additive pool** or the **multiplicative pool** (e.g. `finalDamage = base × (1 + Σadditive%) × Π(1 + multiplicative%)`); within a pool only Σ; write it into the rule formula, don't leave it for the implementation to guess.
+
+## 4. Cumulative value vs incremental value confusion ⚠️
+**Symptom**: growth is double-counted (summed tier by tier and also taking the cumulative column) or under-added.
+**Root cause**: whether the config table stores "cumulative total up to this tier" or "this tier's increment" is neither uniform across the whole table nor written down.
+**How to prevent**: **pick one, uniform across the whole table, write it into the config-spec**. E.g. a progression system's stats `*Percentage`/skill points store the **cumulative total**, settlement directly takes the current-tier row (not tier-by-tier summing), a single grant = this tier − previous tier diff. The cumulative column must be **monotonically non-decreasing** → machine-checked by `value_check`'s `monotonic` rule.
+
+## 5. Sentinel value collides with default value / legal value ⚠️
+**Symptom**: `0`/empty means both "no reference" and happens to be a legal datum or encoding result → misjudgment.
+**Root cause**: using `0` as the "none" sentinel, but some field's legal domain contains 0, or some encoding computes 0.
+**Real case (neutralized)**:
+- **Grid-inventory position encoding**: a 3×N grid encodes cell positions with `(columnX<<16)|rowY`; the top-left cell `(0,0)→0` collides with the "in inventory / not worn" sentinel `0`, making the top-left cell unwearable. Fix: `+1` each in the encoding (`((X+1)<<16)|(Y+1)`), reserving `0` for the inventory.
+- **Evolution/reference field = 0**: some "next form id" field `0` = final stage, no reference, but the foreign-key check treats 0 as an id to query → false `FK_BREAK`. Fix: `value_check` lists `{0, 0.0}` as foreign-key empty sentinels to skip (precondition: **the id domain is always positive, doesn't contain 0**).
+**How to prevent**: before using `0`/empty as a sentinel, **confirm that field's legal domain doesn't contain 0 and no encoding path computes 0**; for encoding types use a `+1` offset to make room for the sentinel; write "`0` = no reference" into the field spec so the validator knows to skip.
+
+## 6. Inconsistent unit/scaling (per-myriad trap)
+**Symptom**: numbers off by 10000×, or a percentage used as an absolute value.
+**Root cause**: the same concept mixes per-myriad (`/10000`), percentage, and absolute value.
+**How to prevent**: a unified project scaling convention (e.g. **per-myriad uniformly `/10000`**), field type/spec clearly marking the unit; `config_check`'s `DOMAIN` can catch a declared domain (e.g. `0~10000`) mismatching the actual data.
+
+## 7. The psychology and imbalance of first-pay / paywall thresholds
+**Symptom**: first-pay/tier design makes the player feel "just a tiny bit short of the next tier" to induce over-spending, or pricing misalignment crashes ARPU.
+**Root cause**: the pay point isn't aligned with the growth curve, the threshold is pulled out of thin air.
+**How to prevent**: align the pay tier with the progression gradient (don't let the free wall land right before a pay tier in a way that looks like extortion); mark the pricing convention `[to-confirm]` for the planner/monetization to decide, **the AI does not decide numbers on their behalf**.
+
+## 8. Pity / variance experience (pseudo-random)
+**Symptom**: under true randomness, an unlucky player gets a long dry streak, the experience collapses; or the pity is too loose and loses the sense of scarcity.
+**Root cause**: using pure uniform randomness, with no pity / soft pity.
+**How to prevent**: gacha sets a **hard pity** (guaranteed within N pulls) + optional **soft pity** (increasing probability); drops use a pseudo-random distribution (PRD) to suppress variance; the pity-counter's save slot must go into the contract.
+
+## 9. Ceiling and capping (fill-out data)
+**Symptom**: the config is fully laid out but some rows shouldn't be used at runtime, yet the implementation uses them → out-of-bounds growth.
+**Root cause**: the numeric table laid out template rows beyond the cap for tidiness, with no mechanism to truncate.
+**How to prevent**: concentrate the capping logic **in one place** (e.g. "cap by quality": truncate by the quality table's "evolvable count," the excess evolution template rows are fill-out data, unused); "chain length > cap" is **expected**, the validation rule uses `severity: advisory`, don't report major (see `checks/example.checks.json` cardinality).
+
+## 10. Cross-system numeric coupling (change one place, drift globally)
+**Symptom**: changing one shared value (quality coefficient / attribute id / text structure) silently misaligns several systems.
+**Root cause**: a broadcast-type shared canonical source (item-id namespace, enum, some global quality/coefficient table, etc.) is referenced by multiple systems, and the change didn't follow a compatibility strategy.
+**How to prevent**: a broadcast-type source is **append-only, never break** (enums only add values, tables only add fields, ids aren't reused); only a breaking change reverse-looks-up the referencers for recheck — registered in the `manifest` F table, with `manifest_check` guarding spine self-consistency. config↔doc desync is machine-checked with `config_check`+`value_check` (don't just tick a box self-assessed — this is the number-one root cause of forked downstream reads of the handoff package).
+
+---
+
+## Quick reference: trap ↔ machine-check tool
+
+| Trap | Machine-checkable? | Tool/rule |
 |----|---------|----------|
-| §4 累计单调 | ✅ | `value_check` `monotonic` |
-| §1/§9 档位覆盖/终点 | ✅ | `value_check` `coverage` |
-| §6 声明域不符 | ✅ | `config_check` `DOMAIN` |
-| §5/§10 外键断链 | ✅ | `value_check` `FK_BREAK`(含空哨兵跳过) |
-| §9 链长 vs 上限 | ✅(advisory) | `value_check` `cardinality` |
-| §10 脊柱/共享真源自洽 | ✅ | `manifest_check` + F 表 |
-| §2 行缺 vs 字段空 | ✅ | `config_index.row_exists` |
-| §3/§7/§8 设计口径 | ❌ 人判 | 规则 review + `[待确认]` 交策划 |
+| §4 cumulative monotonic | ✅ | `value_check` `monotonic` |
+| §1/§9 tier coverage/endpoint | ✅ | `value_check` `coverage` |
+| §6 declared-domain mismatch | ✅ | `config_check` `DOMAIN` |
+| §5/§10 broken foreign key | ✅ | `value_check` `FK_BREAK` (incl. empty-sentinel skip) |
+| §9 chain length vs cap | ✅ (advisory) | `value_check` `cardinality` |
+| §10 spine/shared-source self-consistency | ✅ | `manifest_check` + F table |
+| §2 missing row vs empty field | ✅ | `config_index.row_exists` |
+| §3/§7/§8 design conventions | ❌ human judgment | rule review + `[to-confirm]` to the planner |

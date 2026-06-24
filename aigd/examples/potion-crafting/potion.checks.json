@@ -1,9 +1,9 @@
 {
-  "_about": "药水合成玩具样例的 value_check 领域规则。等级表覆盖+单调。",
+  "_about": "value_check domain rules for the potion-crafting toy example. Level-table coverage + monotonic.",
   "rules": [
     {
       "type": "coverage",
-      "desc": "potionLv 等级连续覆盖 1~5,无断档",
+      "desc": "potionLv levels cover 1~5 contiguously, no gaps",
       "table": "potionLv",
       "field": "id",
       "min": 1,
@@ -11,7 +11,7 @@
     },
     {
       "type": "monotonic",
-      "desc": "等级回血加成随等级单调不减(累计值)",
+      "desc": "level heal bonus is monotonically non-decreasing with level (cumulative value)",
       "table": "potionLv",
       "field": "heal",
       "order_field": "id"

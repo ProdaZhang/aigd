@@ -1,42 +1,42 @@
 ---
 name: aigd-handoff
-description: AIGD 阶段4 · 定稿生成交接包。当某系统试玩定稿后,要生成接口契约、验收用例、(按需)美术/客户端/服务端文档、策划版验收清单时使用。产出"另一个 AI 能直接开发"的平台无关交接物。是 aigd 包的一员,方法论见 ../aigd/references/。
+description: AIGD Phase 4 · finalize and generate the handoff package. Use this when, after a system is finalized in playtesting, you want to generate the interface contract, acceptance cases, (as needed) art/client/server docs, and the designer-facing acceptance checklist. Produces platform-agnostic handoff artifacts that "another AI can develop directly from". Part of the aigd package; methodology in ../aigd/references/.
 ---
 
-# AIGD · handoff(定稿 → 交接包)　[最小骨架]
+# AIGD · handoff (finalize → handoff package)　[minimal skeleton]
 
-> **包契约**:`aigd` 整包安装(编排器 `aigd/`+`references/` 与 6 子 skill(含 aigd-ui-capture)同级放于本环境的 skills 目录,随宿主 agent,如 Claude Code 的 `.claude/skills/`),**勿单拷本 skill**——正文 `../aigd/references/` 依赖同级 `aigd/`,单独拷会断链。
+> **Package contract**: install the whole `aigd` package (the orchestrator `aigd/`+`references/` and the 6 sub-skills (including aigd-ui-capture) placed at the same level in this environment's skills directory, following the host agent, e.g. Claude Code's `.claude/skills/`), **don't copy this skill alone** — the body's `../aigd/references/` depends on `aigd/` at the same level, copying it alone breaks the link.
 
-## 定位
-阶段 4。**定稿门**:用户试玩签字才进;若生成时暴露设计漏洞,**允许打回 `aigd-iterate`**。这里才生成"贵的、下游的"产物(迭代期不产)。
+## Positioning
+Phase 4. **Finalization gate**: only entered once the user signs off on playtesting; if generation exposes a design hole, **bouncing back to `aigd-iterate` is allowed**. This is where the "expensive, downstream" artifacts are generated (not produced during iteration).
 
-## 读 / 产 / 写回
-- **读**:`manifest` 该系统(规则/配置/引用共享)、`项目档案`、`../aigd/references/methodology.md`。
-- **产(必出,平台无关)** —— 路径为工程化布局示例,**实际以 `项目档案『目录布局・命名规范』` 为准**:
-  - `proto/<系统>.proto`:import `proto/common.proto`(concept/manifest 在全局规范登记的公共类型,**在此具象/补进 `common.proto`**——破环的落地点,首个用到它的 handoff 负责建、后续补),从 manifest 领号段(协议号/错误码)。
-  - **proto 公式注释**:凡有计算公式的 message,在注释里给出**代入了字段引用的公式**,让实现 AI 直接照译、不必从散文规则反推。例:
+## Read / produce / write back
+- **Read**: this system in the `manifest` (rules/config/referenced shared items), the `project charter`, `../aigd/references/methodology.md`.
+- **Produce (mandatory, platform-agnostic)** — the paths are an engineering-layout example, **the actual ones defer to the `project charter"directory layout · naming conventions"`**:
+  - `proto/<system>.proto`: import `proto/common.proto` (the common types that concept/manifest registered in the global spec, **made concrete / added into `common.proto` here** — the landing point for breaking cycles; the first handoff to use it is responsible for creating it, later ones add to it), draw the number range (protocol numbers / error codes) from the manifest.
+  - **proto formula comments**: for every message that has a computation formula, give in the comment the **formula with field references substituted in**, so the implementing AI can transcribe it directly without reverse-engineering it from prose rules. Example:
 
     ```proto
-    // 伤害: damage = atk * coefficient - def
-    // 字段引用: atk=Actor.atk, coefficient=Skill.damage_coef, def=Target.def
+    // damage: damage = atk * coefficient - def
+    // field refs: atk=Actor.atk, coefficient=Skill.damage_coef, def=Target.def
     message DamageResult { int32 damage = 1; int32 atk = 2; int32 coefficient = 3; int32 def = 4; }
     ```
 
-  - 工程版 `验收用例`(Gherkin,挂 R-编号,断言用 proto 字段 + `表[主键].字段`)。
-- **产(按需)**:美术需求 / 客户端开发文档 / 服务端开发文档(-06);**策划版验收清单(md + xlsx)**——见 `../aigd/references/handoff-checklist.md`。
-- **写回**:`manifest` 该系统 状态=定稿、占用号段、引用/被引用、待重验触发。
+  - Engineering-grade `acceptance cases` (Gherkin, tagged with R-numbers, assertions using proto fields + `table[primary key].field`).
+- **Produce (as needed)**: art needs / client dev docs / server dev docs (-06); **designer-facing acceptance checklist (md + xlsx)** — see `../aigd/references/handoff-checklist.md`.
+- **Write back**: this system in the `manifest` — Status = Final, occupied number ranges, references / referenced-by, recheck triggers.
 
-## 已固化子能力
-- **策划版验收清单生成器**:`../aigd/references/handoff-checklist.md`(配置→md+xlsx,已试跑通过;副作用:自动抓配置矛盾产 `[待确认]`)。
-- **配置一致性校验器(定稿门必跑)**:`../aigd/references/scripts/`
-  - `config_check.py <config-spec.md> <表.xlsx>` —— schema 漂移(未文档化列/类型不符/表名漂移/声明域越界)。
-  - `value_check.py <config-spec.md> <配置目录> [--acc <acceptance.md>] [--rules <系统.checks.json>] [--enums <枚举字典.md>]` —— 数据完整性(外键断链/验收悬空引用/领域规则如进化链长≤可进化次数)。
-  - **退出码非 0(有 major)= 配置↔文档失同步,打回**。把"配置说明末尾那张自评 ✅ 却没人跑的校验清单"变成机检——经验:文档先定、xlsx 后改不同步,是交接包被下游读出分叉实现的头号根因。
+## Solidified sub-capabilities
+- **Designer-facing acceptance checklist generator**: `../aigd/references/handoff-checklist.md` (config → md+xlsx, already test-run and passing; side effect: automatically catches config contradictions and produces `[to confirm]`).
+- **Config-consistency checker (must run at the finalization gate)**: `../aigd/references/scripts/`
+  - `config_check.py <config-spec.md> <table.xlsx>` — schema drift (undocumented columns / type mismatch / table-name drift / declared-domain out of range).
+  - `value_check.py <config-spec.md> <config dir> [--acc <acceptance.md>] [--rules <system.checks.json>] [--enums <enum-dictionary.md>]` — data integrity (foreign-key breakage / dangling acceptance references / domain rules such as evolution-chain length ≤ evolvable times).
+  - **Non-zero exit code (has major) = config↔doc out of sync, bounce**. Turns "that self-assessed ✅ checklist at the end of the config spec that nobody runs" into a machine check — experience: doc fixed first, xlsx changed later without re-sync is the #1 root cause of the handoff package being read into forked implementations downstream.
 
-## 准入 / 准出 / 打回
-- **准入**:用户明确"定稿"(试玩满意);依赖系统的公共类型/共享表已就绪。
-- **准出**:proto + 验收用例(+ 按需 端文档/策划版清单)齐,manifest 该系统状态=`定稿`、号段已登记 → 触发 `aigd-sync`;**且 `config_check` + `value_check` 无 major**(有则视为设计漏洞、打回)。
-- **打回**:生成时暴露设计漏洞 → 状态回 `试玩中`、回 `aigd-iterate`;并按 manifest「打回规则」反查 `被依赖`,把依赖本系统的已定稿系统标 `待重验`。
+## Admission / exit / bounce
+- **Admission**: the user explicitly says "finalize" (satisfied with playtesting); the dependency systems' common types / shared tables are ready.
+- **Exit**: proto + acceptance cases (+ as needed client-server docs / designer-facing checklist) complete, this system's status in the manifest = `Final`, number ranges registered → triggers `aigd-sync`; **and `config_check` + `value_check` have no major** (if they do, treat it as a design hole and bounce).
+- **Bounce**: generation exposes a design hole → status back to `Playtesting`, back to `aigd-iterate`; and per the manifest "bounce rules" reverse-look-up `depended-on-by`, marking already-finalized systems that depend on this one as `Recheck`.
 
-## 边界
-只到"AI 可直接开发"的交接物为止;不写具体技术栈的客户端/服务端代码(那是下游落地 skill)。
+## Boundary
+Goes only as far as "an AI can develop directly from" handoff artifacts; doesn't write client/server code in a specific tech stack (that's the downstream landing skill).

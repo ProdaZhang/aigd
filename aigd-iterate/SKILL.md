@@ -1,39 +1,39 @@
 ---
 name: aigd-iterate
-description: AIGD 阶段3 · 试玩迭代。当用户试玩原型后要优化规则、改配置表(可反复执行)时使用。只动规则/配置/原型这些"便宜"产物,不碰契约/验收(那些定稿后才生)。是 aigd 包的一员,方法论见 ../aigd/references/。
+description: AIGD Phase 3 · playtest iteration. Use this when, after the user playtests the prototype, they want to optimize the rules or change the config table (can be run repeatedly). Only touches the "cheap" artifacts — rules / config / prototype — not the contract / acceptance (those are produced after finalization). Part of the aigd package; methodology in ../aigd/references/.
 ---
 
-# AIGD · iterate(试玩迭代)　[最小骨架]
+# AIGD · iterate (playtest iteration)　[minimal skeleton]
 
-> **包契约**:`aigd` 整包安装(编排器 `aigd/`+`references/` 与 6 子 skill(含 aigd-ui-capture)同级放于本环境的 skills 目录,随宿主 agent,如 Claude Code 的 `.claude/skills/`),**勿单拷本 skill**——本包子 skill 靠同级 `aigd/` 取方法论,单独拷会断链。
+> **Package contract**: install the whole `aigd` package (the orchestrator `aigd/`+`references/` and the 6 sub-skills (including aigd-ui-capture) placed at the same level in this environment's skills directory, following the host agent, e.g. Claude Code's `.claude/skills/`), **don't copy this skill alone** — this package's sub-skills rely on `aigd/` at the same level to fetch the methodology, copying it alone breaks the link.
 
-## 定位
-阶段 3。在 system(2)↔ iterate(3)之间循环,**可反复**。设计还流动,所以**只改 规则 / 配置(测试数据) / 原型**——proto/验收根本还没生,**零 churn** 就是这步省成本的精髓。
+## Positioning
+Phase 3. Loops between system (2) ↔ iterate (3), **repeatable**. The design is still fluid, so **only change rules / config (test data) / prototype** — the proto/acceptance haven't even been produced yet, and **zero churn** is exactly the essence of how this step saves cost.
 
-## 读 / 产 / 写回
-- **读**:`manifest` 该系统、用户**试玩反馈**。
-- **产 / 改**:rules.md / 配置表(测试数据) / 系统原型.html。
-- **写回**:`manifest` 该系统状态 → `试玩中`(正在试玩;handoff 打回回来的也**保持 `试玩中`**,别覆盖回草稿);记本轮迭代要点(改了什么、为什么)。
+## Read / produce / write back
+- **Read**: this system in the `manifest`, the user's **playtest feedback**.
+- **Produce / change**: rules.md / config table (test data) / system prototype.html.
+- **Write back**: this system's status in the `manifest` → `Playtesting` (currently playtesting; a system bounced back from handoff also **stays `Playtesting`**, don't overwrite it back to Draft); record this round's iteration points (what changed, why).
 
-## 配方
-1. 收集试玩反馈 → 定位是**规则问题**还是**数值问题**。
-2. 改对应件(规则改 -01,数值改配置测试数据,表现改原型)。
-3. 重出原型 → 再试 → 循环,直到用户满意 → 转 `aigd-handoff` 定稿。
+## Recipe
+1. Collect playtest feedback → locate whether it's a **rule problem** or a **value problem**.
+2. Change the corresponding artifact (rules → change -01, numbers → change config test data, presentation → change prototype).
+3. Re-emit the prototype → playtest again → loop, until the user is satisfied → move to `aigd-handoff` to finalize.
 
-## 试玩反馈格式（用户或 AI 试玩后填,喂给本 skill —— 定位决定改哪件)
+## Playtest-feedback format (filled by the user or the AI after playtesting, fed to this skill — the locating decides which artifact to change)
 
-| 维度 | 问题描述 | 定位(规则/数值/表现/其他) | 复现步骤 |
+| Dimension | Problem description | Locating (rule/value/presentation/other) | Repro steps |
 |------|---------|---------------------------|---------|
-| `<如 战斗节奏>` | `<技能释放后等待太长>` | `<数值>` | `<进入战斗→点技能→看冷却>` |
+| `<e.g. combat pacing>` | `<too long a wait after casting a skill>` | `<value>` | `<enter combat → tap skill → watch cooldown>` |
 
-- 定位=**规则** → 改 `-01 rules.md`(改的是逻辑/判断)
-- 定位=**数值** → 改配置表测试数据(改的是手感参数)
-- 定位=**表现** → 改 `-03 原型.html`(改的是反馈/动效/布局)
-> 只一句"不好玩"无法执行——先按此表把它拆成 维度+定位,再动手。
+- Locating = **rule** → change `-01 rules.md` (changing logic / judgment)
+- Locating = **value** → change config table test data (changing feel parameters)
+- Locating = **presentation** → change `-03 prototype.html` (changing feedback / animation / layout)
+> A bare "not fun" can't be acted on — first break it down by this table into dimension + locating, then start changing.
 
-## 准入 / 准出
-- **准入**:原型可点、用户已有试玩反馈。
-- **准出**:改过的规则/配置/原型 + manifest 迭代记录;**用户满意** → 转 `aigd-handoff` 定稿;**发现系统边界画错** → 回 `aigd-concept` 重拆。
+## Admission / exit
+- **Admission**: the prototype is clickable, the user already has playtest feedback.
+- **Exit**: the changed rules/config/prototype + manifest iteration record; **user satisfied** → move to `aigd-handoff` to finalize; **found the system boundary was drawn wrong** → back to `aigd-concept` to re-split.
 
-## 边界
-不生契约/验收/端文档;不动已定稿系统(那要先打回)。
+## Boundary
+Doesn't produce contract / acceptance / client-server docs; doesn't touch already-finalized systems (those must be bounced first).

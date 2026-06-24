@@ -1,53 +1,53 @@
-# 项目档案（脊柱模板）—— 立意层（低频改）
+# Project Charter (Spine Template) — Concept Layer (changes infrequently)
 
-> 强类型字段。`aigd-concept` 起项目时填;讨论深入可回头改,改了在 CHANGELOG（改动账本）记一笔。
-> **这里装"项目实例",方法论(references)保持通用**——子 skill 要项目专属信息时从这读,不写死在方法论里。
+> Strongly-typed fields. Filled in by `aigd-concept` when starting the project; if discussion goes deeper you can come back and revise, and log it in CHANGELOG (the change ledger) when you do.
+> **This holds the "project instance"; the methodology (references) stays generic** — when a sub-skill needs project-specific information it reads it from here, instead of hardcoding it into the methodology.
 
-## 一句话立意
-`<这游戏是什么,一句话>`
+## One-line Concept
+`<What this game is, in one sentence>`
 
-## 核心循环
-`<玩家反复做的核心动作闭环,3–5 步>`
+## Core Loop
+`<The core action loop the player repeats, 3–5 steps>`
 
-## 设计支柱（≤3 条,砍掉弱方向后的)
-> 若立意尚未收敛(早期 / 迁移项目),支柱可能还不存在——**留 `[待确认]` 推断,别硬编当已定**。
-- `<支柱1>` / `<支柱2>` / `<支柱3>`
+## Design Pillars (≤3, after cutting the weak directions)
+> If the concept hasn't converged yet (early-stage / migration project), the pillars may not exist yet — **leave a `[TBD]` inference, don't hardcode it as settled**.
+- `<Pillar 1>` / `<Pillar 2>` / `<Pillar 3>`
 
-## 目标用户 / 平台
-- 目标用户:`<画像>`
-- 平台:`<手机 / PC / 主机…>`;**服务端权威?** `<是/否>`(决定契约/存档形态)
-- 美术风格 / 品牌:`<…>`(界面原型的视觉真源)
+## Target Users / Platform
+- Target users: `<persona>`
+- Platform: `<Mobile / PC / Console…>`; **server-authoritative?** `<yes/no>` (determines the shape of contracts/saves)
+- Art style / brand: `<…>` (the visual source of truth for UI prototypes)
 
-## 商业化
-`<核心变现方式,占位即可>`
+## Monetization
+`<Core monetization model, placeholder is fine>`
 
-## 非功能约束（给实现 AI 的技术边界 —— 影响技术选型,早填早受益)
-- 帧率目标:`<30 / 60 / …>`(决定每帧预算 ms)
-- 网络模型:`<客户端权威 / 服务端权威>`(与「目标用户/平台·服务端权威」一致)
-- 预期同时在线:`<…>`
-- 存档大小上限:`<…>`
-- 关键操作延迟上限:`<…ms>`
-> 不确定的标 `[待确认]`,下游 AI 至少知道这是要问的。
+## Non-functional Constraints (the technical boundaries given to the implementing AI — they affect tech-stack choices, fill them early and reap the benefits early)
+- Frame-rate target: `<30 / 60 / …>` (determines the per-frame budget in ms)
+- Network model: `<client-authoritative / server-authoritative>` (consistent with "Target Users/Platform · server-authoritative")
+- Expected concurrent online: `<…>`
+- Save-file size cap: `<…>`
+- Latency cap for key operations: `<…ms>`
+> Mark anything uncertain as `[TBD]`, so the downstream AI at least knows this is a question to ask.
 
-## 项目专属约定（← 子 skill 从这取,使方法论可移植)
-- 命名规范:`<区-子-系统 / 文件命名…>`
-- 量纲:`<万分比 /10000 等>`
-- **品质体系**:`<本项目有哪几套品质/稀有度维度,各自的域,如 道具稀有度 1-N / 装备品质 / 角色品质 各一套>`
-- 模块码风格:`<R-XXX>`
-- **目录布局**(单一开关,二选一;选定后 manifest 跨层索引、system/handoff 路径示例**全按此取值**):
-  - **工程化**:`docs/系统/<系统>/` + `proto/` + `config/source/` 分置(根=`<…>`)。
-  - **扁平**:`<区>/<系统目录>/<系统目录>-0X<类型>`(6 件套同目录)+ `规范/`·`配置/` 集中。
-- **布局切换命名映射**(同一件在两种布局下叫什么):
+## Project-Specific Conventions (← sub-skills read from here, keeping the methodology portable)
+- Naming convention: `<area-sub-system / file naming…>`
+- Units: `<per-ten-thousand /10000, etc.>`
+- **Quality system**: `<which quality/rarity dimensions this project has, and the domain of each, e.g. item rarity 1-N / equipment quality / character quality, one set each>`
+- Module-code style: `<R-XXX>`
+- **Directory layout** (single switch, pick one of two; once chosen, the manifest cross-layer index and the system/handoff path examples **all follow this value**):
+  - **Engineered**: `docs/systems/<system>/` + `proto/` + `config/source/` kept separate (root = `<…>`).
+  - **Flat**: `<area>/<system-dir>/<system-dir>-0X<type>` (the six-piece set in one directory) + `specs/`·`config/` centralized.
+- **Layout-switch naming map** (what the same piece is called under each of the two layouts):
 
-  | 件 | 扁平 | 工程化 |
+  | Piece | Flat | Engineered |
   |----|------|--------|
-  | 规则 | `<系统>-01系统rules.md` | `docs/系统/<系统>/rules.md` |
-  | 配置说明 | `<系统>-02config-spec.md` | `config/source/<系统>-config-spec.md` |
-  | 原型 | `<系统>-03界面原型.html` | `docs/prototypes/<系统>.html` |
-  | 契约 | `<系统>-04接口契约.proto` | `proto/<系统>.proto` |
-  | 验收 | `<系统>-05acceptance.md` | `docs/系统/<系统>/<系统>-05acceptance.md`(**保留 -05**) |
+  | Rules | `<system>-01rules.md` | `docs/systems/<system>/rules.md` |
+  | Config spec | `<system>-02config-spec.md` | `config/source/<system>-config-spec.md` |
+  | Prototype | `<system>-03prototype.html` | `docs/prototypes/<system>.html` |
+  | Contract | `<system>-04contract.proto` | `proto/<system>.proto` |
+  | Acceptance | `<system>-05acceptance.md` | `docs/systems/<system>/<system>-05acceptance.md` (**keep -05**) |
 
-- ⚠️ **存量 flat 项目迁移 = MOVE 不是 COPY**:复制会 flat↔docs 双真源漂移;一次性移动、迁完弃用 flat 路径。详见 `methodology.md` 第2步。
+- ⚠️ **Migrating an existing flat project = MOVE, not COPY**: copying causes flat↔docs dual-source-of-truth drift; move once, and retire the flat paths after migrating. See `methodology.md` step 2.
 
-## 待确认
-- [ ] `<涉及具体数值 / 口径的待定项,等用户拍>`
+## To Confirm
+- [ ] `<Pending items involving specific values / conventions, awaiting the user's call>`

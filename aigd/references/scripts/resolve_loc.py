@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
-"""可移植 LocalizationText 解析器 —— 文本 id → 中文。
+"""Portable LocalizationText resolver -- text id -> Chinese.
 
-从 LocalizationText 式 xlsx(A列=文本id、B列=中文)建 id→中文 映射;
-配置表里 NameId/DescId 等是 id,代入真值时用本脚本查中文。
-同样用 zipfile+xml(openpyxl 对国产导出 xlsx 会报错)。
+Builds an id->Chinese mapping from a LocalizationText-style xlsx (column A=text id,
+column B=Chinese); fields like NameId/DescId in config tables are ids, and this
+script resolves the Chinese text for them when substituting real values.
+Also uses zipfile+xml (openpyxl raises errors on domestic-exported xlsx).
 
-用法:
+Usage:
   python resolve_loc.py <LocalizationText.xlsx> [out.txt] [start-end ...]
-    - 不给区间 → 输出全量 id→中文
-    - 给区间(如 30000001-30000060)→ 只输出这些 id(可多段)
-    - 给 out.txt → 写 UTF-8 文件;否则 stdout
-列位置默认 A=id、B=中文,如不同改 build() 的 id_col/cn_col。
-无项目硬编码:路径与 id 段全走 argv。
+    - no range       -> output the full id->Chinese mapping
+    - with range(s) (e.g. 30000001-30000060) -> only output those ids (multiple
+      segments allowed)
+    - with out.txt   -> write a UTF-8 file; otherwise stdout
+Column positions default to A=id, B=Chinese; if different, change build()'s id_col/cn_col.
+No project hard-coding: paths and id ranges all come from argv.
 """
 import zipfile, re, sys
 import xml.etree.ElementTree as ET

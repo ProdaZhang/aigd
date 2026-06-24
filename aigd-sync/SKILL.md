@@ -1,43 +1,43 @@
 ---
 name: aigd-sync
-description: AIGD 贯穿动作 · 回写整合(非线性"最后一步",每个系统 handoff 后都触发)。当某系统落定后要更新全局规范、整体 html 原型(整合 demo)、实现总纲(交接包入口),或某共享项变更后标记下游系统重验时使用。维护脊柱与交接包入口的一致性。是 aigd 包的一员,方法论见 ../aigd/references/。
+description: AIGD cross-cutting action · sync-back integration (a non-linear "last step", triggered after every system's handoff). Use this when, once a system is settled, you need to update the global spec, the overall html prototype (integration demo), the implementation master guide (handoff-package entry point), or mark downstream systems for recheck after a shared item changes. Maintains consistency between the spine and the handoff-package entry point. Part of the aigd package; methodology in ../aigd/references/.
 ---
 
-# AIGD · sync(回写整合)　[最小骨架]
+# AIGD · sync (sync-back integration)　[minimal skeleton]
 
-> **包契约**:`aigd` 整包安装(编排器 `aigd/`+`references/` 与 6 子 skill(含 aigd-ui-capture)同级放于本环境的 skills 目录,随宿主 agent,如 Claude Code 的 `.claude/skills/`),**勿单拷本 skill**——本包子 skill 靠同级 `aigd/` 取方法论,单独拷会断链。
+> **Package contract**: install the whole `aigd` package (the orchestrator `aigd/`+`references/` and the 6 sub-skills (including aigd-ui-capture) placed at the same level in this environment's skills directory, following the host agent, e.g. Claude Code's `.claude/skills/`), **don't copy this skill alone** — this package's sub-skills rely on `aigd/` at the same level to fetch the methodology, copying it alone breaks the link.
 
-## 定位
-**贯穿动作(不是线性"第 5 步")**:每个系统 handoff 后都触发,持续 / 里程碑式回写。把单系统的成果回写到项目层,保持脊柱与整体一致;管"下行影响"。
+## Positioning
+**Cross-cutting action (not a linear "step 5")**: triggered after every system's handoff, a continuous / milestone-style sync-back. Writes each single system's results back to the project layer, keeping the spine consistent with the whole; manages "downstream impact".
 
-## 读 / 产 / 写回
-- **读**:`manifest`(全量)、各系统状态、`项目档案`。
-- **产 / 改**:
-  - 全局规范收口(枚举 / 号段 / 量纲 去重对齐)。
-  - `规范/全局集成验收.md`(把下方「集成检查」结果**落盘**成跨系统验收;`实现总纲` 即指向它)。
-  - 整体原型(整合 demo)—— 单文件 html,放项目档案『目录布局』指定处(工程化布局归 `docs/prototypes/`)。
-  - `实现总纲.md`(交接包入口:给下游 AI 的 start here)。
-- **写回**:① 共享项变更 → 按「配方 4」两类反查(点对点 → A 表「被依赖(下游)」/ 广播型 → C 表「引用的共享真源」)→ 标受影响的已定稿系统「**待重验**」(记在 D 表);② **重验通过** → 该系统「`待重验` → `定稿`」,刷新 D 表定稿时间(= 本次重验确认时间)——这是 `待重验` 状态唯一的出口,不补它该状态会永远悬在那。
+## Read / produce / write back
+- **Read**: the `manifest` (full), each system's status, the `project charter`.
+- **Produce / change**:
+  - Global-spec consolidation (enums / number ranges / units deduplicated and aligned).
+  - `spec/integration-acceptance.md` (**land** the results of the "integration check" below into cross-system acceptance; the `implementation master guide` points to it).
+  - Overall prototype (integration demo) — a single html file, placed where the project charter"directory layout"specifies (engineering layout → `docs/prototypes/`).
+  - `impl-overview.md` (handoff-package entry point: the start-here for downstream AI).
+- **Write back**: ① shared item changed → per "recipe 4" reverse-look-up in two categories (point-to-point → table A "depended-on-by (downstream)" / broadcast-type → table C "referenced shared source of truth") → mark affected already-finalized systems `Recheck` (record in table D); ② **recheck passed** → that system `Recheck → Final`, refresh table D's finalization time (= this recheck's confirmation time) — this is the only exit from the `Recheck` state; not handling it leaves that state hanging forever.
 
-## 配方
-1. 系统定稿后:收编其枚举/号段到全局规范。
-2. 把该系统并进整体原型(整合 demo)。
-3. 刷新实现总纲(系统清单/建造顺序/契约位置/验收入口)。
-4. 跑下行影响,**分两类**(各自反查不同列):
-   - **点对点系统边**(某系统的产出被另几个系统消费)变 → 反查 **A 表「被依赖(下游)」**,标那几个下游 `待重验`(记在 D 表)。
-   - **广播型共享真源**(枚举 / 文本结构 / id 命名空间,见 manifest F 表)变 → **向后兼容(纯追加)免重验**;**破坏性变更** → 反查 **C 表「引用的共享真源」** 找出列了它的系统(广播型真源不在 A 表「被依赖」里)→ 标这些系统 D 表 `待重验`,**别炸全表**。
-5. **重验 `待重验` 系统**:核对它对「变更后的共享项」引用是否还成立 → 成立则状态回 `定稿`、刷 D 表;不成立则打回(回 iterate/concept,按打回规则再联动其下游)。
+## Recipe
+1. After a system is finalized: absorb its enums / number ranges into the global spec.
+2. Merge that system into the overall prototype (integration demo).
+3. Refresh the implementation master guide (system list / build order / contract locations / acceptance entry).
+4. Run downstream impact, **in two categories** (each reverse-looks-up a different column):
+   - **Point-to-point system edge** (one system's output consumed by several others) changed → reverse-look-up **table A "depended-on-by (downstream)"**, mark those few downstream `Recheck` (record in table D).
+   - **Broadcast-type shared source of truth** (enums / text structure / id namespace, see manifest table F) changed → **backward-compatible (pure append) needs no recheck**; **breaking change** → reverse-look-up **table C "referenced shared source of truth"** to find the systems that listed it (broadcast-type sources aren't in table A "depended-on-by") → mark those systems `Recheck` in table D, **don't blow up the whole table**.
+5. **Recheck the `Recheck` systems**: verify whether their references to the "changed shared item" still hold → if they hold, status back to `Final`, refresh table D; if not, bounce (back to iterate/concept, and per the bounce rules cascade to its downstream again).
 
-## 集成检查（每次必跑 —— 中观层(系统间组合)事后闸;组合点的事前设计在 concept)
-- [ ] 系统 A 产出的枚举,B 消费时字段对齐?
-- [ ] A 的配置主键,在 B 的引用表里存在?
-- [ ] A↔B 状态机有无死锁(A 等 B、B 等 A)?
-- [ ] 核心循环(最小可玩闭环)所有系统都覆盖到?
-任一不通过 → 标问题、回相关系统(必要时回 concept),并把结果写进 `规范/全局集成验收.md`。
+## Integration check (must run every time — meso-layer (inter-system combination) post-hoc gate; the up-front design of combination points is in concept)
+- [ ] The enums system A produces — do the fields align when B consumes them?
+- [ ] Do A's config primary keys exist in B's reference table?
+- [ ] Is there a deadlock in the A↔B state machines (A waits for B, B waits for A)?
+- [ ] Does the core loop (minimal playable closed loop) cover all systems?
+Any one failing → flag the problem, go back to the relevant system (back to concept if needed), and write the result into `spec/integration-acceptance.md`.
 
-## 准入 / 准出
-- **准入**:有系统状态变 `定稿`,或某共享项发生变更,或有 `待重验` 系统待核。
-- **准出**:全局规范收口 + 整体原型更新 + 实现总纲刷新 + 受影响系统已标 `待重验` + 入选重验的 `待重验` 系统已结清(通过→`定稿` / 不通过→打回)。
+## Admission / exit
+- **Admission**: a system has changed to `Final`, or some shared item has changed, or there are `Recheck` systems pending verification.
+- **Exit**: global spec consolidated + overall prototype updated + implementation master guide refreshed + affected systems marked `Recheck` + the `Recheck` systems selected for recheck settled (pass → `Final` / fail → bounce).
 
-## 边界
-只做项目层回写与一致性维护,不设计新系统(那是 concept/system)。
+## Boundary
+Only does project-layer sync-back and consistency maintenance, doesn't design new systems (that's concept/system).

@@ -1,4 +1,4 @@
-# AIGD 脚本依赖。详见 README.md。
-# 纯标准库(无需安装):ui_render / xlsx_dump / resolve_loc / config_index / config_check / value_check / manifest_check
-openpyxl>=3.0      # gherkin_to_checklist.py 写 xlsx(仅写侧;读 xlsx 一律走 xlsx_dump)
-Pillow>=9.0        # ui_palette.py / ui_slice.py 图像采色/切片
+# AIGD script dependencies. See README.md for details.
+# Pure stdlib (no install needed): ui_render / xlsx_dump / resolve_loc / config_index / config_check / value_check / manifest_check
+openpyxl>=3.0      # gherkin_to_checklist.py writes xlsx (write side only; reading xlsx always goes via xlsx_dump)
+Pillow>=9.0        # ui_palette.py / ui_slice.py image color-sampling/slicing

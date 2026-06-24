@@ -1,18 +1,18 @@
-# 资源栏 · 通用模块
+# Resource Bar · generic module
 
-> 类型: 模块
-> 尺寸: 1600×120
+> Type: module
+> Size: 1600×120
 
 ## Layout
 
 ```
-背板   :bg   [面板]   @{0 0 100 100} z=3
-金币   :gold [数值条] @{2 22 18 56}  z=5 "8000"
-钻石   :gem  [数值条] @{22 22 18 56} z=5 "320"
-设置   :set  [按钮]   @{93 22 5 56}  z=6 "⚙"
+backplate :bg   [panel]    @{0 0 100 100} z=3
+gold      :gold [valueBar]  @{2 22 18 56}  z=5 "8000"
+gem       :gem  [valueBar]  @{22 22 18 56} z=5 "320"
+settings  :set  [button]    @{93 22 5 56}  z=6 "⚙"
 ```
 
-## 皮肤
+## Skin
 
-面板    #1a1d26 / #cdd3dd
-数值条  #2a2440 / #cfe0f0
+panel     #1a1d26 / #cdd3dd
+valueBar  #2a2440 / #cfe0f0

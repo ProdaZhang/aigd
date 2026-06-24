@@ -1,13 +1,13 @@
-"""工具2 · 界面知识库还原器(确定性纯脚本,仅标准库)。
+"""Tool 2 - interface knowledge-base reconstructor (deterministic pure script, stdlib only).
 
-把界面 DSL(.md)解析成元素列表,再渲染成自包含 html(L0线稿/L1皮肤/L2氛围
-三档切换)+ 可选 svg 静态快照。同 DSL + 同版本 → 输出字节一致。
+Parses the interface DSL (.md) into an element list, then renders a self-contained html (L0 wireframe /
+L1 skin / L2 atmosphere, three-way toggle) + an optional static svg snapshot. Same DSL + same version -> byte-identical output.
 
-皮肤(配色)非渲染必需:md 内可选 `## 皮肤` 段(id 或类型 → 色),或外部
-`--skin theme.skin.json`(同键覆盖皮肤段);都没有则回退类型默认 L1。
-分层 z 可选——无 z 时按 (缩进, 文档顺序) 兜底。
+Skin (color) is not required for rendering: the md may have an optional `## Skin` section (id or type -> color), or an
+external `--skin theme.skin.json` (same-key overrides the Skin section); if neither, it falls back to the type default L1.
+The layer z is optional -- without z, it falls back to (indent, document order).
 
-用法: python ui_render.py <dsl.md> [out.html] [--svg out.svg] [--skin theme.skin.json]
+Usage: python ui_render.py <dsl.md> [out.html] [--svg out.svg] [--skin theme.skin.json]
 """
 import re, sys, json, os
 
@@ -17,24 +17,24 @@ _Z   = re.compile(r"z=(\d+)")
 _REP = re.compile(r"[×x](\d+)")
 _BR  = re.compile(r"\[([^\]]+)\]")
 _TXT = re.compile(r'"([^"]*)"')
-_SHAPE = re.compile(r"形=([^\s]+)")
+_SHAPE = re.compile(r"shape=([^\s]+)")
 _SKINHEX = re.compile(r"#[0-9a-fA-F]{6}")
-_META_KIND = re.compile(r"类型\s*[:：]\s*(\S+)")
-_META_SIZE = re.compile(r"尺寸\s*[:：]\s*(\d+)\s*[×xX*]\s*(\d+)")
+_META_KIND = re.compile(r"Type\s*[:：]\s*(\S+)")
+_META_SIZE = re.compile(r"Size\s*[:：]\s*(\d+)\s*[×xX*]\s*(\d+)")
 
 
 def recommend_size(img_w, img_h):
-    """按 UI设计规范:横版锁高1080、竖版锁宽1080,另一轴按原图比例(给捕获 skill 写 > 尺寸)。"""
+    """Per the UI design spec: landscape locks height to 1080, portrait locks width to 1080, the other axis follows the original image ratio (for the capture skill to write the > size)."""
     if img_w >= img_h:
         return (int(round(1080.0 * img_w / img_h)), 1080)
     return (1080, int(round(1080.0 * img_h / img_w)))
 
 
 def _parse_skin_lines(lines):
-    """`## 皮肤` 段 → {键: {fill, ink}};键 = 元素 id 或 类型(类型主题)。
+    """`## Skin` section -> {key: {fill, ink}}; key = element id or type (type theme).
 
-    行格式: `键  #填充[/#文字]`(键在前、色在后)。以 `#` 起头的行视作注释跳过
-    (皮肤行键在前,不会以 `#` 开头),色取行内 `#RRGGBB`:第一个=填充、第二个=文字。
+    Line format: `key  #fill[/#ink]` (key first, color after). A line starting with `#` is treated as a comment and skipped
+    (a skin line has the key first, never starting with `#`); colors are taken from the line's `#RRGGBB`: first=fill, second=ink.
     """
     skin = {}
     for ln in lines:
@@ -52,15 +52,15 @@ def _parse_skin_lines(lines):
 
 
 def parse_dsl(text):
-    """界面 DSL 文本 → {screen, palette, skin, elements[], events[]}。
+    """Interface DSL text -> {screen, palette, skin, elements[], events[]}.
 
-    Layout 行文法(基准): 名称 [:id] [类型] @{x y w h} [z=N] [形=形状] [[态]] [×N] ["文本"]
-    类型 = @{ 之前的方括号; 态 = @{...} 之后的方括号; 无 @{} 的行(标题/注释)跳过。
-    缩进 = 嵌套层级(子元素缩进更深);分层无 z 时按 (缩进, 文档顺序) 兜底,见 _enrich。
-    `## 皮肤` 段(可选) = id 或 类型 → 颜色,见 _parse_skin_lines。
+    Layout line grammar (baseline): name [:id] [type] @{x y w h} [z=N] [shape=...] [[state]] [×N] ["text"]
+    type = the bracket before @{; state = the bracket after @{...}; lines without @{} (headings/comments) are skipped.
+    Indent = nesting level (child elements indent deeper); without z, layering falls back to (indent, document order), see _enrich.
+    `## Skin` section (optional) = id or type -> color, see _parse_skin_lines.
     """
     screen, palette = "", None
-    kind, size = "屏", (2400, 1080)
+    kind, size = "screen", (2400, 1080)
     elements, events, pal_lines, skin_lines, imports = [], [], [], [], {}
     section = None
     for raw in text.splitlines():
@@ -69,7 +69,7 @@ def parse_dsl(text):
             screen = line[2:].strip(); continue
         if line.startswith("## "):
             head = line[3:].strip()
-            section = next((k for k in ("Layout", "Events", "配色板", "设计点评", "皮肤", "引用")
+            section = next((k for k in ("Layout", "Events", "Palette", "Notes", "Skin", "Refs")
                             if head.startswith(k)), None)
             continue
         if line.startswith(">"):
@@ -85,11 +85,11 @@ def parse_dsl(text):
             continue
         if not line.strip():
             continue
-        if section == "配色板":
+        if section == "Palette":
             pal_lines.append(line.strip()); continue
-        if section == "皮肤":
+        if section == "Skin":
             skin_lines.append(line.strip()); continue
-        if section == "引用":
+        if section == "Refs":
             mi = re.match(r"(.+?)\s*=\s*(.+)", line.strip())
             if mi:
                 imports[mi.group(1).strip()] = mi.group(2).strip()
@@ -109,7 +109,7 @@ def parse_dsl(text):
             mid = _ID.search(pre)
             eid = mid.group(1) if mid else None
             tb = _BR.search(pre)
-            etype = tb.group(1) if tb else "未知"
+            etype = tb.group(1) if tb else "unknown"
             name = pre
             if mid:
                 name = name.replace(":" + eid, "")
@@ -142,15 +142,15 @@ def parse_dsl(text):
 
 
 def validate(parsed):
-    """提醒(非阻断):返回未标 z 的元素标识列表。缺 z 时分层按 (缩进, 文档顺序) 兜底。"""
+    """Reminder (non-blocking): returns the identifiers of elements without z. Without z, layering falls back to (indent, document order)."""
     return [(e["name"] or e["id"] or e["type"]) for e in parsed["elements"] if e["z"] is None]
 
 
-_INST = "实例·"
+_INST = "instance·"
 
 
 def _fit_contain(ix, iy, iw, ih, mod_w, mod_h, sw, sh):
-    """包围盒(屏%)+模块像素+屏像素 → 模块等比居中后的子矩形(屏%)。"""
+    """Bounding box (screen %) + module pixels + screen pixels -> the module's centered sub-rect after equal-ratio fit (screen %)."""
     bw, bh = iw / 100.0 * sw, ih / 100.0 * sh
     if bw <= 0 or bh <= 0 or mod_w <= 0 or mod_h <= 0:
         return ix, iy, iw, ih
@@ -164,7 +164,7 @@ def _fit_contain(ix, iy, iw, ih, mod_w, mod_h, sw, sh):
 
 
 def _place(e, mod_w, mod_h, sw, sh):
-    """实例 → 模块内容在屏上的子矩形(屏%)。4 值 → contain 进框;否则 → 原像素左上放置。"""
+    """Instance -> the module content's sub-rect on screen (screen %). 4 values -> contain into the box; otherwise -> top-left placement at original pixels."""
     if e["w"] is not None and e["h"] is not None:
         return _fit_contain(e["x"], e["y"], e["w"], e["h"], mod_w, mod_h, sw, sh)
     if sw <= 0 or sh <= 0:
@@ -173,7 +173,7 @@ def _place(e, mod_w, mod_h, sw, sh):
 
 
 def resolve(parsed, base_dir, modules_dir=None, _stack=()):
-    """展开所有 实例· 元素为扁平绝对元素;返回新 parsed(elements/skin 合并,imports 清空)。"""
+    """Expand all instance· elements into flat absolute elements; returns a new parsed (elements/skin merged, imports cleared)."""
     sw, sh = parsed["size"]
     imports = parsed.get("imports") or {}
     out_els, out_skin = [], dict(parsed.get("skin") or {})
@@ -184,12 +184,12 @@ def resolve(parsed, base_dir, modules_dir=None, _stack=()):
         alias = t.split("·", 1)[1]
         rel = imports.get(alias)
         if rel is None:
-            raise ValueError("未声明引用: %s(在 ## 引用 加 '%s = 路径')" % (alias, alias))
+            raise ValueError("undeclared reference: %s (add '%s = path' under ## Refs)" % (alias, alias))
         path = os.path.normpath(os.path.join(base_dir, rel))
         if not os.path.exists(path) and modules_dir:
             path = os.path.normpath(os.path.join(modules_dir, rel))
         if path in _stack:
-            raise ValueError("模块循环引用: %s" % " -> ".join(list(_stack) + [path]))
+            raise ValueError("module circular reference: %s" % " -> ".join(list(_stack) + [path]))
         with open(path, encoding="utf-8") as f:
             sub = parse_dsl(f.read())
         sub = resolve(sub, os.path.dirname(path), modules_dir, tuple(_stack) + (path,))
@@ -221,17 +221,17 @@ def resolve(parsed, base_dir, modules_dir=None, _stack=()):
     return new
 
 
-TYPE_ABBR = {"按钮": "anniu", "文本": "wenben", "图标槽": "tubiao",
-             "背景槽": "beijing", "立绘槽": "lihui", "面板": "mianban",
-             "容器": "rongqi", "数值条": "shuzhitiao", "装饰": "zhuangshi",
-             "chrome": "chrome", "未知": "unknown"}
+TYPE_ABBR = {"button": "anniu", "text": "wenben", "iconSlot": "tubiao",
+             "bgSlot": "beijing", "artSlot": "lihui", "panel": "mianban",
+             "container": "rongqi", "valueBar": "shuzhitiao", "decoration": "zhuangshi",
+             "chrome": "chrome", "unknown": "unknown"}
 
 
 def _enrich(elements, skin=None):
-    """skin 已是合并后的有效皮肤(id/类型混键);查色优先级 id → 类型 → `·`前基础类型。
+    """skin is already the merged effective skin (mixed id/type keys); color lookup priority id -> type -> the base type before `·`.
 
-    分层 layer = z(若标);否则按缩进深度兜底(子元素缩进更深 → 叠在父容器上),
-    同层由文档顺序决定(svg 稳定排序 / html DOM 追加序)。
+    Layer = z (if marked); otherwise falls back to indent depth (children indent deeper -> stacked above their parent container),
+    same-layer order decided by document order (svg stable sort / html DOM append order).
     """
     skin = skin or {}
     out = []
@@ -253,7 +253,7 @@ def _enrich(elements, skin=None):
 
 
 def _eff_skin(parsed, external=None):
-    """有效皮肤 = md 内 `## 皮肤` 段,被外部 --skin 覆盖(同键 --skin 优先)。"""
+    """Effective skin = the md's `## Skin` section, overridden by external --skin (same key, --skin wins)."""
     eff = dict(parsed.get("skin") or {})
     eff.update(external or {})
     return eff
@@ -293,15 +293,15 @@ aside{position:fixed;right:14px;top:74px;width:270px;max-height:78vh;overflow:au
 aside h3{font-size:13px;margin-bottom:6px;color:#fff}aside .ev{padding:5px 0;border-bottom:1px dashed #2a3040}aside .ev b{color:#7ad0ff}
 </style></head><body>
 <header><b>{SCREEN}</b>
-<button id="bWire" onclick="render('wire')">线稿</button>
-<button id="bSkin" class="on" onclick="render('skin')">皮肤</button>
-<button id="bAtmo" onclick="render('atmo')">氛围</button>
-<button id="bLayout" onclick="render('layout')">布局</button>
-<button id="bCalib" onclick="toggleCalib()">校准</button>
-<button onclick="exportDSL()">导出 DSL</button>
-<span style="margin-left:auto;color:#7a818c">校准模式可拖拽/缩放槽 → 导出 DSL · {PALETTE}</span></header>
+<button id="bWire" onclick="render('wire')">Wireframe</button>
+<button id="bSkin" class="on" onclick="render('skin')">Skin</button>
+<button id="bAtmo" onclick="render('atmo')">Atmosphere</button>
+<button id="bLayout" onclick="render('layout')">Layout</button>
+<button id="bCalib" onclick="toggleCalib()">Calibrate</button>
+<button onclick="exportDSL()">Export DSL</button>
+<span style="margin-left:auto;color:#7a818c">Calibrate mode lets you drag/resize slots -> Export DSL · {PALETTE}</span></header>
 <div class="viewport"><div class="stage skin" id="stage"></div></div>
-<aside><h3>交互日志</h3><div id="log" style="color:#7a818c">点任意元素…</div></aside>
+<aside><h3>Interaction log</h3><div id="log" style="color:#7a818c">click any element...</div></aside>
 <script>
 const C={x:{STAGEW},y:{STAGEH}};
 const ELS={ELS};
@@ -309,7 +309,7 @@ const EVENTS={EVENTS};
 const PALETTE={PALETTEJSON};
 const CANVAS={CANVAS};const CANVASINK={CANVASINK};
 const INSTANCES={INSTANCES};
-const NAME={"anniu":"按钮","wenben":"文本","tubiao":"图标槽","beijing":"背景槽","lihui":"立绘槽","mianban":"面板","rongqi":"容器","shuzhitiao":"数值条","zhuangshi":"装饰","chrome":"chrome","unknown":"?"};
+const NAME={"anniu":"button","wenben":"text","tubiao":"iconSlot","beijing":"bgSlot","lihui":"artSlot","mianban":"panel","rongqi":"container","shuzhitiao":"valueBar","zhuangshi":"decoration","chrome":"chrome","unknown":"?"};
 const accent=(PALETTE.match(/#[0-9a-fA-F]{6}/)||["#7a3ac0"])[0];
 function skinByType(ab,state){
   let s;
@@ -348,8 +348,8 @@ function makeDraggable(d,e){
 }
 function exportDSL(){
   const lines=(curMode==="layout")
-    ? INSTANCES.map(e=>e.label+" :"+e.id+" [实例·"+e.alias+"] @{"+e.x+" "+e.y+(e.native?"":(" "+e.w+" "+e.h))+"}"+(e.z?(" z="+e.z):""))
-    : ELS.map(e=>{let s=" ".repeat(e.indent||0)+e.label;if(e.id)s+=" :"+e.id;s+=" ["+e.type+"]";s+=" @{"+e.x+" "+e.y+" "+e.w+" "+e.h+"}";if(e.z)s+=" z="+e.z;if(e.state)s+=" ["+e.state+"]";if(e.shape)s+=" 形="+e.shape;if(e.text)s+=' "'+e.text+'"';return s;});
+    ? INSTANCES.map(e=>e.label+" :"+e.id+" [instance·"+e.alias+"] @{"+e.x+" "+e.y+(e.native?"":(" "+e.w+" "+e.h))+"}"+(e.z?(" z="+e.z):""))
+    : ELS.map(e=>{let s=" ".repeat(e.indent||0)+e.label;if(e.id)s+=" :"+e.id;s+=" ["+e.type+"]";s+=" @{"+e.x+" "+e.y+" "+e.w+" "+e.h+"}";if(e.z)s+=" z="+e.z;if(e.state)s+=" ["+e.state+"]";if(e.shape)s+=" shape="+e.shape;if(e.text)s+=' "'+e.text+'"';return s;});
   let ta=document.getElementById("dslout");
   if(!ta){ta=document.createElement("textarea");ta.id="dslout";ta.style.cssText="position:fixed;left:14px;bottom:14px;width:60vw;height:200px;z-index:2000;background:#0c0e13;color:#cfe0f0;border:1px solid #3a4a6a;font:12px monospace;padding:8px";document.body.appendChild(ta);}
   ta.value="## Layout\n\n```\n"+lines.join("\n")+"\n```\n";ta.style.display="block";ta.select();
@@ -362,7 +362,7 @@ function renderLayout(){
     d.style.cssText=`left:${b[0]/100*C.x}px;top:${b[1]/100*C.y}px;width:${b[2]/100*C.x}px;height:${b[3]/100*C.y}px;border:2px dashed #b47ae0;background:rgba(120,60,180,.12);color:#e8def5`;
     d.style.zIndex=e.z||7;
     const tg=document.createElement("span");tg.className="tag";tg.style.display="block";tg.textContent=e.label+" ["+e.alias+"]";d.appendChild(tg);
-    const c=document.createElement("span");c.textContent="▣ 实例·"+e.alias+(e.native?"(原尺寸)":"(缩放)");c.style.fontSize="13px";d.appendChild(c);
+    const c=document.createElement("span");c.textContent="▣ instance·"+e.alias+(e.native?"(native size)":"(scaled)");c.style.fontSize="13px";d.appendChild(c);
     if(calib){ makeDraggable(d,e); if(e.native){ const rs=d.querySelector('.rs'); if(rs) rs.style.display='none'; } }
     stage.appendChild(d);
   }
@@ -371,7 +371,7 @@ function render(mode){
   curMode=mode;
   for(const id of ["Wire","Skin","Atmo","Layout"]){const b=document.getElementById("b"+id); if(b) b.classList.toggle("on",mode===id.toLowerCase());}
   stage.className="stage "+mode+(calib?" calib":""); stage.innerHTML="";
-  stage.style.background=CANVAS||"";stage.style.color=CANVASINK||"";   // @canvas 主题:套品牌画布底色
+  stage.style.background=CANVAS||"";stage.style.color=CANVASINK||"";   // @canvas theme: apply the brand canvas background
   if(mode==="layout"){ renderLayout(); return; }
   for(const e of ELS){
     const d=document.createElement("div");
@@ -392,22 +392,22 @@ function render(mode){
     } else if(mode==="wire"){
       const t=document.createElement("span"); t.className="tag"; t.textContent=e.label+"·"+(NAME[e.abbr]||e.abbr); d.appendChild(t);
       const c=document.createElement("span");
-      c.textContent=isArt?("▢ "+e.label+"槽·换素材"):centerText(e);
+      c.textContent=isArt?("▢ "+e.label+" slot·swap asset"):centerText(e);
       if(isArt) c.className="slotnote";
       d.appendChild(c);
     } else {
       d.style.cssText+=";"+skinByType(e.abbr,e.state);
       if(isArt){
         if(mode==="atmo") d.style.background="radial-gradient(circle at 42% 48%,#040308 6%,#cfc6d2 11%,#3a2630 18%,#1a0e16 55%,#08060c)";
-        const n=document.createElement("span"); n.className="slotnote"; n.textContent="▢ "+e.label+"槽·换素材"; d.appendChild(n);
+        const n=document.createElement("span"); n.className="slotnote"; n.textContent="▢ "+e.label+" slot·swap asset"; d.appendChild(n);
       } else d.textContent=centerText(e);
     }
     if(mode!=="wire"){ if(e.fill) d.style.background=e.fill; if(e.ink) d.style.color=e.ink; }
-    if(e.shape==="圆"||e.shape==="圆形"||e.shape==="circle") d.style.borderRadius="50%";
+    if(e.shape==="circle") d.style.borderRadius="50%";
     if(calib){ makeDraggable(d,e); }
     else d.onclick=()=>{
       const hit=EVENTS.filter(t=>t.includes(e.label)||(e.id&&t.includes(e.id)));
-      const msg=hit.length?hit.join(" / "):"(无显式交互·展示元素)";
+      const msg=hit.length?hit.join(" / "):"(no explicit interaction · display element)";
       const div=document.createElement("div"); div.className="ev";
       const b=document.createElement("b"); b.textContent=e.label; div.appendChild(b);
       div.appendChild(document.createTextNode(" "+msg));
@@ -423,9 +423,9 @@ addEventListener("resize",fit);render("skin");fit();
 
 
 def _extract_instances(parsed, base_dir, modules_dir=None):
-    """从未展开的 parsed 抽实例 + 算其屏上占位框(供 html「布局」档拖拽校准)。
+    """From the unexpanded parsed, extract instances + compute their on-screen placement box (for the html "Layout" mode drag calibration).
 
-    box = native 取模块原像素占比(x,y,fw,fh)、contain 取声明包围盒(x,y,w,h);native 仅拖不缩。
+    box = native takes the module's original pixel ratio (x,y,fw,fh), contain takes the declared bounding box (x,y,w,h); native can only be dragged, not resized.
     """
     sw, sh = parsed["size"]
     imports = parsed.get("imports") or {}
@@ -478,11 +478,11 @@ SVG_STROKE = {"anniu": "#3aa655", "wenben": "#5a6472", "tubiao": "#e08a3a",
 
 
 def render_svg(parsed, skin=None):
-    """单文件静态 svg 线框(对照 spike 3-md还原.svg)。
+    """Single-file static svg wireframe (compare against spike 3-md-reconstruct.svg).
 
-    全屏底图先画(底层);数值条画 track+fill;标签用中文类型;选中态品红描边;
-    形=圆 才画圆;容器/面板无文本时不画居中标签;底部附图例。
-    分层按 layer(z 优先,否则缩进)稳定排序——同层保文档顺序。
+    The full-screen backdrop is drawn first (bottom layer); value bars draw track+fill; labels use the Chinese type name; selected state uses magenta stroke;
+    shape=circle draws a circle; containers/panels without text get no centered label; a legend is appended at the bottom.
+    Layered by layer (z first, otherwise indent) with a stable sort -- same layer keeps document order.
     """
     import html as _h
     W, H = parsed["size"]
@@ -491,9 +491,9 @@ def render_svg(parsed, skin=None):
     cont = ("rongqi", "mianban")
     eff = _eff_skin(parsed, skin)
     cv = eff.get("@canvas") or {}
-    stagebg = cv.get("fill") or "#12151d"          # @canvas:套品牌画布;否则暗底
-    deffill = cv.get("fill") or "#161a24"          # 无主题元素的默认填充
-    defink = cv.get("ink") or "#cdd3dd"            # 默认文字色
+    stagebg = cv.get("fill") or "#12151d"          # @canvas: apply the brand canvas; otherwise a dark background
+    deffill = cv.get("fill") or "#161a24"          # default fill for un-themed elements
+    defink = cv.get("ink") or "#cdd3dd"            # default text color
     enr = _enrich(parsed["elements"], eff)
     ordered = sorted(enr, key=lambda el: el["layer"])
     p = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" '
@@ -506,7 +506,7 @@ def render_svg(parsed, skin=None):
         stroke = "#e848a0" if sel else SVG_STROKE.get(e["abbr"], "#5a6472")
         sw = ' stroke-width="2.5"' if sel else ''
         dash = ' stroke-dasharray="7 5"' if (e["abbr"] == "tubiao" or e["abbr"] in art or e["abbr"] == "zhuangshi") else ''
-        rx = min(w, h) / 2 if e["shape"] in ("圆", "圆形", "circle") else 4
+        rx = min(w, h) / 2 if e["shape"] in ("circle",) else 4
         did = _h.escape(e["id"] or "")
         rfill = e["fill"] or deffill
         g = ['<g data-id="%s"><rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" rx="%.1f" '
@@ -515,7 +515,7 @@ def render_svg(parsed, skin=None):
                  % (x + 6, y + 14, _h.escape("%s·%s" % (e["label"], e["type"]))))
         if e["abbr"] in art:
             g.append('<text x="%.1f" y="%.1f" font-size="12" fill="#e0b070" text-anchor="middle">%s</text>'
-                     % (x + w / 2, y + h / 2 + 4, _h.escape("▢ %s槽·换素材" % e["label"])))
+                     % (x + w / 2, y + h / 2 + 4, _h.escape("▢ %s slot·swap asset" % e["label"])))
         elif e["abbr"] == "shuzhitiao":
             m = re.search(r"(\d+)\s*/\s*(\d+)", e["text"] or "")
             ratio = max(0.0, min(1.0, int(m.group(1)) / (int(m.group(2)) or 1))) if m else 0.6
@@ -532,11 +532,11 @@ def render_svg(parsed, skin=None):
                          % (x + w / 2, y + h / 2 + 4, e["ink"] or defink, _h.escape(ctext)))
         g.append('</g>')
         p.append("".join(g))
-    p.append('<text x="12" y="%d" font-size="13" fill="#fff">%s · md→svg 还原(静态线框)</text>'
+    p.append('<text x="12" y="%d" font-size="13" fill="#fff">%s · md->svg reconstruction (static wireframe)</text>'
              % (H + 22, _h.escape(parsed["screen"])))
-    leg = [("#4a90d9", "容器/面板"), ("#3aa655", "按钮"), ("#5a6472", "文本"),
-           ("#e08a3a", "图标/背景槽·换素材"), ("#2bb3a3", "数值条"),
-           ("#3a4150", "装饰"), ("#e848a0", "选中态")]
+    leg = [("#4a90d9", "container/panel"), ("#3aa655", "button"), ("#5a6472", "text"),
+           ("#e08a3a", "icon/background slot·swap asset"), ("#2bb3a3", "value bar"),
+           ("#3a4150", "decoration"), ("#e848a0", "selected state")]
     lx = 12
     for col, name in leg:
         p.append('<rect x="%d" y="%d" width="14" height="14" rx="3" fill="%s" stroke="%s"/>'
@@ -566,7 +566,7 @@ def main(argv=None):
         modules_dir = argv[i + 1]
         del argv[i:i + 2]
     if not argv:
-        print("用法: python ui_render.py <dsl.md> [out.html] [--svg out.svg] [--skin theme.skin.json] [--modules dir]")
+        print("usage: python ui_render.py <dsl.md> [out.html] [--svg out.svg] [--skin theme.skin.json] [--modules dir]")
         return 2
     src = argv[0]
     out = argv[1] if len(argv) > 1 else (src.rsplit(".", 1)[0] + ".html")
@@ -577,7 +577,7 @@ def main(argv=None):
     parsed = resolve(raw, bd, modules_dir)
     miss = validate(parsed)
     if miss:
-        print("⚠ 提醒:这些元素未标 z=(分层将按 缩进/文档顺序 兜底;捕获入库前宜补全):")
+        print("Reminder: these elements have no z= (layering will fall back to indent/document order; better to fill in before capturing into the knowledge base):")
         for n in miss:
             print("   -", n)
     with open(out, "w", encoding="utf-8") as f:

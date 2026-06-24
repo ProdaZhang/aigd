@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""config_check.py 测试 —— 纯 stdlib(逻辑层用内存夹具,不落 xlsx 文件;表/字段名均为示意)。
-跑法: python test_config_check.py
+"""config_check.py tests -- pure stdlib (logic layer uses in-memory fixtures, no xlsx files written; table/field names are illustrative).
+Run: python test_config_check.py
 """
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -18,13 +18,13 @@ def test_parse_domain_range():
     assert C.parse_domain("1~200") == ("range", 1, 200)
 
 def test_parse_domain_unparseable_returns_none():
-    # 带文字/省略/口径的一律不解析,避免误报
-    for s in ["万分比", "—", "累计值", "0/1，默认 0", "Grade 1A/2B/3C/4S",
-              "0随机/int指定槽", "0/5/10/…/100", "0 起", ""]:
+    # anything with text/ellipsis/spec is not parsed, to avoid false positives
+    for s in ["per-ten-thousand", "—", "cumulative value", "0/1, default 0", "Grade 1A/2B/3C/4S",
+              "0 random/int designated slot", "0/5/10/.../100", "0 and up", ""]:
         assert C.parse_domain(s) is None, s
 
 
-# ---------- parse_xlsx_sheet (内存 rows) ----------
+# ---------- parse_xlsx_sheet (in-memory rows) ----------
 
 def _rows(*rows):
     return [list(r) for r in rows]
@@ -34,48 +34,48 @@ def test_xlsx_table_name_from_row1():
         ["unit", "", "", ""],
         ["int", "int", "int", "int"],
         ["id", "name", "rarity", "convert"],
-        ["id", "名称", "品质", "转化"],
+        ["id", "name", "rarity", "convert"],
         ["1001", "1", "2", "5001"],
     ))
     assert sh["table"] == "unit"
     assert set(sh["fields"]) == {"id", "name", "rarity", "convert"}
 
 def test_xlsx_array_field_collapsed():
-    # skill[ ] 占 4 列 → 归一为逻辑字段 skill
+    # skill[ ] spans 4 columns -> collapses into the logical field skill
     sh = C.parse_xlsx_sheet(_rows(
         ["unit", "", "", "", "", ""],
         ["int", "int", "int", "int", "int", "int"],
         ["id", "skill[", "", "", "]", "model"],
-        ["id", "技能", "", "", "", "模型"],
+        ["id", "skill", "", "", "", "model"],
         ["1001", "1", "2", "3", "4", "9"],
     ))
     assert set(sh["fields"]) == {"id", "skill", "model"}
     assert sh["fields"]["skill"]["is_array"] is True
 
 def test_xlsx_object_array_collapsed():
-    # 对象数组 field.sub[{id,min,max}…max}] 闭合于含 ] 的列 → 归一为单逻辑字段,后续列不被吞
+    # object array field.sub[{id,min,max}...max}] closes at the column containing ] -> collapses into one logical field, later columns not swallowed
     sh = C.parse_xlsx_sheet(_rows(
         ["gear", "", "", "", "", ""],
         ["int", "int", "int64", "int64", "int", "int64"],
         ["id", "stat.roll[{id", "min", "max}]", "groupId", "bonus"],
-        ["id", "属性", "", "", "组", "加成"],
+        ["id", "stat", "", "", "group", "bonus"],
         ["1", "11", "5", "9", "3", "100"],
     ))
     assert set(sh["fields"]) == {"id", "stat.roll", "groupId", "bonus"}
-    assert sh["fields"]["stat.roll"]["is_array"] is True   # 后续 groupId/bonus 未被吞
+    assert sh["fields"]["stat.roll"]["is_array"] is True   # later groupId/bonus not swallowed
 
 def test_diff_skips_type_for_array():
-    doc = {"T": {"fields": {"m": {"type": "混合", "is_array": True, "value": "—", "range": "—", "ref": "—"}}}}
-    xl = {"T": _xf({"m": ("int", None)})}        # xlsx 数组列,单一类型 int
-    assert not any(f["kind"] == "TYPE" for f in C.diff(doc, xl))   # 数组不比类型
+    doc = {"T": {"fields": {"m": {"type": "mixed", "is_array": True, "value": "—", "range": "—", "ref": "—"}}}}
+    xl = {"T": _xf({"m": ("int", None)})}        # xlsx array column, single type int
+    assert not any(f["kind"] == "TYPE" for f in C.diff(doc, xl))   # arrays do not compare type
 
 def test_xlsx_merge_artifact_none_skipped():
-    # name 合并单元格 → 第2列字段名为空,不应产生幽灵字段
+    # name merged cell -> 2nd column field name empty, should not produce a phantom field
     sh = C.parse_xlsx_sheet(_rows(
         ["unit", "", ""],
         ["int", "", "int"],
         ["name", "", "rarity"],
-        ["名称", "名字", "品质"],
+        ["name", "name", "rarity"],
         ["1", "", "2"],
     ))
     assert set(sh["fields"]) == {"name", "rarity"}
@@ -85,42 +85,42 @@ def test_xlsx_scalar_domain_collected():
         ["starTable", ""],
         ["int", "int"],
         ["id", "skillPoint"],
-        ["行id", "技能点"],
-        ["1", "2"], ["2", "3"], ["3", "40"], ["4", ""],  # 空格跳过
+        ["row id", "skill point"],
+        ["1", "2"], ["2", "3"], ["3", "40"], ["4", ""],  # empty skipped
     ))
     assert sh["fields"]["skillPoint"]["vals"] == [2, 3, 40]
 
 
 # ---------- parse_config_md ----------
 
-_MD = """# 示例配置说明
+_MD = """# Example config-spec
 
-## 配置表总览
+## Config table overview
 
-| Sheet | 表名 | 主键 | 用途 | 状态 |
+| Sheet | Table | Primary key | Purpose | Status |
 |---|---|---|---|---|
-| 单位 | `unit` | id | x | [已定] |
+| unit | `unit` | id | x | [defined] |
 
-## 1. `unit` 单位列表（主键 id）
+## 1. `unit` unit list (primary key id)
 
-| 字段 | 类型 | 取值/枚举 | 范围/默认 | 引用 | 说明 |
+| Field | Type | Values/Enum | Range/Default | Ref | Notes |
 |------|------|----------|----------|------|------|
 | id | int | — | 1xxxxx | — | id |
-| rarity | int | Rarity | 1~5 | `枚举字典.Rarity` | 品质 |
-| skill[1..4] | int[] | — | 4 列 | 技能表 | 技能 |
+| rarity | int | Rarity | 1~5 | `enum-dict.Rarity` | rarity |
+| skill[1..4] | int[] | — | 4 columns | skill-table | skill |
 
-## 2. `starTable` 升星（主键 star）  [已定]
+## 2. `starTable` star-up (primary key star)  [defined]
 
-| 字段 | 类型 | 取值 | 范围 | 引用 | 说明 |
+| Field | Type | Values | Range | Ref | Notes |
 |------|------|------|------|------|------|
 | id | int | — | — | — | id |
-| skillPoint | int | 0/1 | — | — | 是否发点 |
+| skillPoint | int | 0/1 | — | — | whether to grant points |
 """
 
 def test_config_md_tables_and_fields():
     doc = C.parse_config_md(_MD)
-    assert set(doc) == {"unit", "starTable"}          # 总览不算表;只取带 backtick 标题的段
-    assert set(doc["unit"]["fields"]) == {"id", "rarity", "skill"}  # 数组归一
+    assert set(doc) == {"unit", "starTable"}          # overview is not a table; only backtick-titled sections are taken
+    assert set(doc["unit"]["fields"]) == {"id", "rarity", "skill"}  # array collapsed
     assert doc["unit"]["fields"]["rarity"]["range"] == "1~5"
     assert doc["starTable"]["fields"]["skillPoint"]["value"] == "0/1"
 
@@ -158,7 +158,7 @@ def test_diff_type_mismatch():
     assert any(f["kind"] == "TYPE" and f["field"] == "id" for f in fs)
 
 def test_diff_table_rename_then_field_diff():
-    # 文档表名 slot,xlsx 表名 unitSlot(含 slot) → RENAME;且多列 max → UNDOC_COL
+    # doc table name slot, xlsx table name unitSlot (contains slot) -> RENAME; and extra column max -> UNDOC_COL
     doc = {"slot": _docf(id="int", condition="int", para="int")}
     xl = {"unitSlot": _xf({"id": ("int", []), "condition": ("int", []),
                            "para": ("int", []), "max": ("int", [])})}
@@ -173,7 +173,7 @@ def test_diff_domain_enum_violation():
     fs = C.diff(doc, xl)
     d = [f for f in fs if f["kind"] == "DOMAIN" and f["field"] == "skillPoint"]
     assert d and d[0]["sev"] == "advisory"
-    assert "2" in d[0]["msg"] or "40" in d[0]["msg"]   # 给出越界样例
+    assert "2" in d[0]["msg"] or "40" in d[0]["msg"]   # gives an out-of-range sample
 
 def test_diff_domain_range_ok_no_finding():
     doc = {"T": {"fields": {"rarity": {"type": "int", "value": "Rarity", "range": "1~5",
@@ -183,7 +183,7 @@ def test_diff_domain_range_ok_no_finding():
     assert not any(f["kind"] == "DOMAIN" for f in fs)
 
 def test_diff_domain_unparseable_skipped():
-    doc = {"T": {"fields": {"hp": {"type": "int", "value": "万分比", "range": "累计值",
+    doc = {"T": {"fields": {"hp": {"type": "int", "value": "per-ten-thousand", "range": "cumulative value",
                                    "ref": "—", "is_array": False}}}}
     xl = {"T": _xf({"hp": ("int", [120, 880, 9999])})}
     fs = C.diff(doc, xl)
@@ -192,7 +192,7 @@ def test_diff_domain_unparseable_skipped():
 def test_diff_array_field_no_false_positive():
     doc = {"T": {"fields": {"skill": {"type": "int", "value": "—", "range": "—",
                                       "ref": "—", "is_array": True}}}}
-    xl = {"T": _xf({"skill": ("int", None)})}   # None vals → array
+    xl = {"T": _xf({"skill": ("int", None)})}   # None vals -> array
     fs = C.diff(doc, xl)
     assert not any(f["kind"] in ("UNDOC_COL", "MISSING_COL") for f in fs)
 

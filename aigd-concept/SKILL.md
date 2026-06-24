@@ -1,38 +1,38 @@
 ---
 name: aigd-concept
-description: AIGD 阶段1 · 头脑风暴与顶层设计。当要给新游戏立意、定核心循环/平台/目标用户,或把游戏拆成系统清单+依赖图、起项目脊柱时使用。产出/修订 项目档案 + manifest(系统清单)。是 aigd 包的一员,方法论见 ../aigd/references/。
+description: AIGD Phase 1 · brainstorming & top-level design. Use this when you want to set the concept for a new game, fix the core loop / platform / target users, or split the game into a system list + dependency graph and start the project spine. Produces / revises the project charter + manifest (system list). Part of the aigd package; methodology in ../aigd/references/.
 ---
 
-# AIGD · concept(头脑风暴 + 顶层设计)　[最小骨架]
+# AIGD · concept (brainstorming + top-level design)　[minimal skeleton]
 
-> **包契约**:`aigd` 整包安装(编排器 `aigd/`+`references/` 与 6 子 skill(含 aigd-ui-capture)同级放于本环境的 skills 目录,随宿主 agent,如 Claude Code 的 `.claude/skills/`),**勿单拷本 skill**——正文 `../aigd/references/` 依赖同级 `aigd/`,单独拷会断链。
+> **Package contract**: install the whole `aigd` package (the orchestrator `aigd/`+`references/` and the 6 sub-skills (including aigd-ui-capture) placed at the same level in this environment's skills directory, following the host agent, e.g. Claude Code's `.claude/skills/`), **don't copy this skill alone** — the body's `../aigd/references/` depends on `aigd/` at the same level, copying it alone breaks the link.
 
-## 定位
-阶段 1。发散讨论 → 收敛成「做什么 + 由哪些系统组成」。**低频但可反复修订**(讨论深入会回头改立意/平台/系统清单)——它写的是活的脊柱,不是一次性产物。
+## Positioning
+Phase 1. Diverge in discussion → converge into "what to make + which systems it's made of". **Low-frequency but repeatedly revisable** (deeper discussion will circle back to change the concept / platform / system list) — it writes the live spine, not a one-shot artifact.
 
-## 读 / 产 / 写回
-- **读**:已有脊柱(若有);`../aigd/references/methodology.md`(命名/编号/规范部分)。
-- **产 / 写回**(按模板填,见 `../aigd/references/templates/`):
-  - `项目档案.md`(照 `project-charter.tpl.md`):立意 / 核心循环 / 支柱 / 平台 / 目标用户 / **项目专属约定**(命名/量纲/品质体系…)。
-  - `manifest.md`(照 `manifest.tpl.md`):系统清单 + 依赖图 + 号段预分配 + 跨层索引占位(状态=草稿)。
+## Read / produce / write back
+- **Read**: existing spine (if any); `../aigd/references/methodology.md` (the naming / numbering / spec parts).
+- **Produce / write back** (fill per template, see `../aigd/references/templates/`):
+  - `project-charter.md` (per `project-charter.tpl.md`): concept / core loop / pillars / platform / target users / **project-specific conventions** (naming / units / quality system…).
+  - `manifest.md` (per `manifest.tpl.md`): system list + dependency graph + number-range pre-allocation + cross-layer index placeholders (Status = Draft).
 
-## 配方
-1. 访谈:核心体验 / 核心循环 / 设计支柱 / 商业化 / 美术方向;**砍掉弱方向**。
-2. 拆系统:按下方「系统拆分规则」定边界 → 列系统清单、画依赖图(边集)、定建造顺序;环检测 → 公共类型**先在项目层(全局规范)登记**破环(handoff 时再具象为 `proto/common.proto`)。**同时标出"涌现性组合"**(几个系统合起来才有意义的,如 战斗=移动+技能+伤害+AI)——登记为"组合点",留给 sync 做**事前集成设计**,而非事后补。
-3. 照模板写 `项目档案.md` + `manifest.md`(每系统占一行、状态=草稿)+ 立全局规范骨架(枚举/命名/量纲占位)。
+## Recipe
+1. Interview: core experience / core loop / design pillars / monetization / art direction; **cut the weak directions**.
+2. Split into systems: per the "system-splitting rules" below, fix boundaries → list the systems, draw the dependency graph (edge set), fix the build order; cycle detection → common types are **registered first in the project layer (global spec)** to break cycles (made concrete as `proto/common.proto` later at handoff). **Also flag "emergent combinations"** (those that only make sense when several systems are combined, e.g. combat = movement + skills + damage + AI) — register them as "combination points", leaving them for sync to do **up-front integration design** rather than patching them in afterward.
+3. Per template, write `project-charter.md` + `manifest.md` (one row per system, Status = Draft) + stand up the global-spec skeleton (enum / naming / unit placeholders).
 
-## 系统拆分规则（manifest 里"一个系统"的尺子)
-满足以下 **≥2 条** 才独立为一个系统,否则并入上级:
-- **有自己的配置表**(不只是消费别人的表);
-- **有独立规则边界**(能脱离其他系统讲清);
-- **试玩可单独验证**(关了它游戏还能跑的是可选模块,不是系统);
-- **有独立状态机 / 生命周期**。
-满足全部 → 考虑再拆子系统(`系统/子系统` 两层)。
-反例:"伤害公式"是战斗的规则、不是系统;"红点提示"是跨系统机制,归全局规范。
+## System-splitting rules (the ruler for "one system" in the manifest)
+Must meet **≥2 of the following** to stand alone as a system, otherwise merge into the parent:
+- **Has its own config table** (not just consuming someone else's table);
+- **Has an independent rule boundary** (can be explained apart from other systems);
+- **Can be playtested independently** (if the game still runs with it turned off, it's an optional module, not a system);
+- **Has an independent state machine / lifecycle**.
+Meets all of them → consider splitting further into subsystems (`system/subsystem` two levels).
+Counter-examples: "damage formula" is a rule of combat, not a system; "red-dot notification" is a cross-system mechanic, belongs in the global spec.
 
-## 准入 / 准出
-- **准入**:无(从零起),或已有旧脊柱(则是修订)。
-- **准出**:`项目档案.md` + `manifest.md`(系统清单 + 依赖图 + 号段预分配)齐 → 才进 `aigd-system`。
+## Admission / exit
+- **Admission**: none (starting from scratch), or an existing old spine (then it's a revision).
+- **Exit**: `project-charter.md` + `manifest.md` (system list + dependency graph + number-range pre-allocation) complete → only then proceed to `aigd-system`.
 
-## 边界
-只产脊柱与顶层设计,不进单系统细节(那是 aigd-system)。
+## Boundary
+Produces only the spine and top-level design, doesn't get into single-system detail (that's aigd-system).

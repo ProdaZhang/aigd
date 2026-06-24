@@ -1,46 +1,46 @@
-# manifest（脊柱）—— 药水合成玩具样例
+# manifest (spine) — Potion-Crafting Toy Example
 
-> 最小脊柱:压 `manifest_check` 跑通。2 系统(药水/商店),真实数据指向本样例文件。
+> Minimal spine: trimmed so `manifest_check` passes. 2 systems (potion/shop), real data pointing at this example's files.
 
-## 状态枚举（全表统一）
-`草稿` → `试玩中` → `定稿` → `待重验`。`定稿*` = 定稿带 `[待确认]` 挂账。
+## Status Enum (unified across all tables)
+`Draft` → `Playtesting` → `Final` → `Recheck`. `Final*` = Final with a `[TBD]` backlog.
 
-## A. 系统清单 + 依赖图
-| 系统ID | 系统名 | 区-子-系统目录 | 状态 | R-模块码 | 依赖(上游) | 被依赖(下游) |
+## A. System Inventory + Dependency Graph
+| SystemID | Name | area-sub-system dir | Status | R-ModuleCode | Deps (upstream) | Depended-on-by (downstream) |
 |--------|--------|----------------|------|----------|-----------|-------------|
-| S01 | 药水 | examples/potion-crafting | 定稿* | R-POT | 道具`[外部]`·文本`[外部]` | 商店 |
-| S02 | 商店 | examples/shop | 草稿 | R-SHOP | 药水(售卖药水) | (无) |
+| S01 | Potion | examples/potion-crafting | Final* | R-POT | Item`[external]`·Text`[external]` | Shop |
+| S02 | Shop | examples/shop | Draft | R-SHOP | Potion (sells potions) | (none) |
 
-> 边:商店 → 药水(售卖)。药水只引外部表(道具/文本),不构成系统依赖边。无构建环。
+> Edges: Shop → Potion (sells). Potion only references external tables (item/text), forming no system dependency edge. No build cycle.
 
-## B. 号段分配登记
-| 模块码 | 系统 | 协议号段 | 错误码段 | 备注 |
+## B. Range Allocation Registry
+| ModuleCode | System | Protocol Range | Error-code Range | Notes |
 |--------|------|----------|----------|------|
-| R-POT | 药水 | 1700–1799 `示例` | 17000– `示例` | `PotionError` |
-| R-SHOP | 商店 | 1800–1899 `示例` | 18000– `示例` | stub |
+| R-POT | Potion | 1700–1799 `example` | 17000– `example` | `PotionError` |
+| R-SHOP | Shop | 1800–1899 `example` | 18000– `example` | stub |
 
-## C. 跨层索引（每系统一块）
+## C. Cross-layer Index (one block per system)
 
-### S01 药水
-- **规则(-01)**:`rules.md`(R-POT-CRAFT/USE/STACK)
-- **配置表**:`potion.xlsx`(4 表)+ `config-spec.md`
-- **契约(proto)**:`potion.proto`
-- **验收**:`acceptance.md`
-- **领域规则**:`potion.checks.json`(coverage/monotonic)
-- **反向提供**:无独有共享真源
+### S01 Potion
+- **Rules (-01)**: `rules.md` (R-POT-CRAFT/USE/STACK)
+- **Config tables**: `potion.xlsx` (4 tables) + `config-spec.md`
+- **Contract (proto)**: `potion.proto`
+- **Acceptance**: `acceptance.md`
+- **Domain rules**: `potion.checks.json` (coverage/monotonic)
+- **Reverse-provides**: no exclusive shared source of truth
 
-### S02 商店  `（草稿 stub）`
-- **规则(-01)**:`(待写)`
-- **引用的共享真源**:药水 `potion.id`(上架售卖)
-- **其余**:待(stub)
+### S02 Shop  `(draft stub)`
+- **Rules (-01)**: `(to be written)`
+- **Referenced shared sources of truth**: potion `potion.id` (listing for sale)
+- **The rest**: pending (stub)
 
-## D. 冻结账本 + 待重验
-| 系统 | 状态 | 定稿时间 | 占用号段 | 待重验触发 |
+## D. Freeze Ledger + Recheck
+| System | Status | Final time | Occupied ranges | Recheck trigger |
 |------|------|----------|----------|------------|
-| S01 药水 | 定稿* | 2026-06-23 | 1700– / 17000– | 挂账:无 |
-| S02 商店 | 草稿 | — | — | 药水接口 |
+| S01 Potion | Final* | 2026-06-23 | 1700– / 17000– | backlog: none |
+| S02 Shop | Draft | — | — | potion interface |
 
-## E. 回退记录
-| 时间 | 系统 | 从状态 → 到状态 | 原因 | 受影响的下游 |
+## E. Rollback Records
+| Time | System | From status → To status | Reason | Affected downstream |
 |------|------|-----------------|------|--------------|
 | — | — | — | — | — |

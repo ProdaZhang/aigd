@@ -1,11 +1,11 @@
-# CHANGELOG —— 改动账本（默认项目根）
+# CHANGELOG — Change Ledger (default: project root)
 
-> **AIGD 项目环境前置**(唯一一个):脊柱可重入性靠它——每改一个文件,在末尾追加一行;换 AI / 跨会话能回溯"做过什么、为什么"。
-> 列:`时间 | 文件 | 内容 | 原因 | 模型`。**内容列别用裸 `|`**(撑乱表格)——用 `/` 或 `\|`。
-> **位置**:默认项目根 `CHANGELOG.md`;可在 `项目档案『目录布局』` 指定别处。
-> **项目已有账本**(任何名字)→ **沿用它、别另起**;此模板仅供"项目根还没有"时初始化。
-> 回填规则由方法论第 5 步 + 质量门禁第 8 条强制,**不依赖任何宿主 AI 指令文件**(CLAUDE.md / AGENTS.md / GEMINI.md 等是运行环境的事,不归 AIGD)。
+> **AIGD project-environment prerequisite** (the only one): the spine's re-entrancy relies on this — every time you change a file, append a line at the end; switching AIs / across sessions you can trace back "what was done, and why".
+> Columns: `Time | File | Content | Reason | Model`. **Don't use a bare `|` in the Content column** (it breaks the table) — use `/` or `\|`.
+> **Location**: defaults to `CHANGELOG.md` at the project root; can be pointed elsewhere in `project-charter "Directory layout"`.
+> **The project already has a ledger** (any name) → **reuse it, don't start a new one**; this template is only for initializing when "the project root doesn't have one yet".
+> The backfill rule is enforced by methodology step 5 + quality-gate item 8, and **does not depend on any host-AI instruction file** (CLAUDE.md / AGENTS.md / GEMINI.md etc. are the runtime environment's business, not AIGD's).
 
-| 时间 | 文件 | 内容 | 原因 | 模型 |
+| Time | File | Content | Reason | Model |
 |------|------|------|------|------|
-| YYYY-MM-DD HH:mm | `<文件>` | `<改了什么>` | `<为什么>` | `<模型名>` |
+| YYYY-MM-DD HH:mm | `<file>` | `<what changed>` | `<why>` | `<model name>` |

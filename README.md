@@ -4,6 +4,12 @@
 
 > 🌐 中文版 / Chinese version: **[ProdaZhang/aigd-zh](https://github.com/ProdaZhang/aigd-zh)**
 
+**Who it's for — and what each role gets:**
+
+- **Product / design / solo devs** — brainstorm the feature with an AI (feed it a design doc if you have one, else it interviews you) → a **clickable prototype** to try → iterate → a **finalized package another AI can build from**.
+- **Engineers** — a **typed interface contract** (client = server) + config spec + acceptance cases → another AI (or you) implements it without ambiguity.
+- **QA** — **acceptance cases + a visual Excel checklist** → another AI runs the tests, or do black-box testing straight from the Excel.
+
 ![AIGD: brainstorm a design with an AI, produce the handoff package, then gate it with deterministic checks](docs/session.gif)
 
 **You only do two things: brainstorm the design with an AI, and set the numbers.** The flow handles the rest — it turns the discussion into structured output (rules carry IDs · numbers live in config · UI-DSL · interface contract · acceptance cases), gates consistency with **deterministic checkers**, and packages a **platform-agnostic handoff** that **another AI can implement directly** — verified by a real run in this repo (below).

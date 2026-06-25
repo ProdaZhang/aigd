@@ -1,5 +1,7 @@
 # AIGD — AI-assisted game design methodology (portable skill package)
 
+[![tests](https://github.com/ProdaZhang/aigd/actions/workflows/tests.yml/badge.svg)](https://github.com/ProdaZhang/aigd/actions/workflows/tests.yml)
+
 *Brainstorm a game's design with one AI; hand the result to another AI to build it — backed by deterministic checkers that won't let a broken handoff through.*
 
 > 🌐 中文版 / Chinese version: **[ProdaZhang/aigd-zh](https://github.com/ProdaZhang/aigd-zh)**
